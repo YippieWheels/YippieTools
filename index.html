@@ -5,10 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YippieWheels</title>
     
-    <!-- Loading Tailwind CSS -->
+    <!-- Tailwind CSS para el layout -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Loading VT323, a retro pixel font from Google Fonts -->
+    <!-- Configuración de colores personalizados para Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        retroRed: '#e50000', 
+                        retroBg: '#0a0a0a',  
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Fuente Pixelada -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -16,123 +30,232 @@
     <style>
         body {
             font-family: 'VT323', monospace;
-            background-color: #1a1a1a;
-            color: #801a1a;
+            background-color: #0a0a0a;
+            color: #e50000;
         }
         
-        /* Custom scrollbar to keep the retro vibe */
-        ::-webkit-scrollbar {
-            width: 10px;
+        /* Scrollbar retro */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; border-left: 1px solid #e50000; }
+        ::-webkit-scrollbar-thumb { background: #e50000; }
+
+        /* Estilo para los cuadros del contador retro */
+        .digit-box {
+            display: inline-block;
+            border: 1px solid #e50000;
+            padding: 2px 6px;
+            margin: 0 2px;
+            font-size: 1.5rem;
+            line-height: 1;
         }
-        ::-webkit-scrollbar-track {
-            background: #1a1a1a;
-            border-left: 1px solid #801a1a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #801a1a;
+
+        /* Enlaces ocultos que cubren toda la caja de la herramienta */
+        .tool-card { position: relative; }
+        .tool-card a::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 10;
         }
     </style>
 </head>
-<body class="min-h-screen p-8 max-w-5xl mx-auto text-2xl sm:text-3xl">
+<body class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto text-xl sm:text-2xl selection:bg-retroRed selection:text-retroBg">
 
-    <!-- HEADER SECTION -->
-    <header class="mb-6">
-        <div class="flex items-end gap-4 mb-6">
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="border-2 border-retroRed p-6 relative">
+
+        <!-- HEADER -->
+        <header class="relative mb-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
             
-            <!-- 
-            *** AVATAR PLACEHOLDER ***
-            Replace the div below with your pixelated burning skeleton gif. 
-            Example: <img src="https://cdn.pixabay.com/animation/2022/07/31/02/24/02-24-40-130_512.gif" alt="avatar" class="w-24 h-24 sm:w-32 sm:h-32 object-cover">
-            -->
-            <img src="https://cdn.pixabay.com/animation/2022/07/31/02/24/02-24-40-130_512.gif" alt="avatar" class="w-24 h-24 sm:w-32 sm:h-32 object-cover">
-            
-            <h1 class="text-5xl sm:text-7xl leading-none">YippieWheels</h1>
+            <div class="flex-1">
+                <div class="flex items-center gap-6 mb-4">
+                    <!-- AVATAR -->
+                    <div class="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0 bg-yellow-100 flex items-center justify-center border border-retroRed">
+                        <!-- Reemplaza el src con tu calavera quemandose -->
+                        <img src="https://cdn.pixabay.com/animation/2022/07/31/02/24/02-24-40-130_512.gif" alt="Skull Avatar" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <!-- TITULO -->
+                    <h1 class="text-6xl sm:text-8xl tracking-widest uppercase">YippieWheels</h1>
+                </div>
+
+                <p class="text-retroRed opacity-90 max-w-3xl leading-tight">
+                    &lt;There is a list of tools I created for Happy Wheels! To be transparent, they were made using AI—but I still think you can do some great things with them!&gt;
+                </p>
+            </div>
+
+            <!-- DOODLES SUPERIOR DERECHA -->
+            <div class="w-full md:w-64 h-32 border border-dashed border-retroRed relative md:absolute top-0 right-0 flex items-center justify-center p-2 text-center text-sm opacity-70">
+                [ ESPACIO PARA DOODLES:<br>Under Construction / My Leg ]
+            </div>
+
+        </header>
+
+        <!-- FECHA Y HORA FUNCIONAL -->
+        <div class="text-right mb-2 text-xl sm:text-2xl flex justify-end items-center gap-4">
+            <span id="datetime">2026-10-06  22:47</span>
+            <span class="text-2xl">★</span>
         </div>
-        
-        <div class="pl-2">
-            &lt;Here is a list of tools I created for Happy Wheels! To be transparent, they were made using AI—but I still think you can do some great things with them!&gt;
-        </div>
-    </header>
 
-    <!-- SEPARATOR LINE -->
-    <hr class="border-[#801a1a] mb-8">
+        <hr class="border-retroRed mb-6">
 
-    <!-- MAIN CONTENT GRID -->
-    <main class="flex flex-col md:flex-row gap-8 sm:gap-12">
-        
-        <!-- LEFT SIDE: TOOLS GRID -->
-        <section class="flex-grow">
-            <h2 class="text-4xl mb-6 pl-2">Tools:</h2>
+        <!-- GRID PRINCIPAL -->
+        <main class="flex flex-col lg:flex-row gap-8">
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+            <!-- IZQUIERDA: HERRAMIENTAS -->
+            <section class="flex-grow">
                 
-                <!-- TOOL 1 -->
-                <div class="flex flex-col items-start">
-                    <!-- 
-                    *** HOW TO ADD YOUR TOOL IMAGE ***
-                    Replace the src attribute below with your image link or file name.
-                    Example: <img src="my-game-pic.png" alt="Tool 1" class="w-full h-full object-cover">
-                    -->
-                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
-                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
-                    </div>
-                    <!-- 
-                    *** HOW TO LINK YOUR HTML FILES ***
-                    Change the href="#" attribute to the name of your file.
-                    -->
-                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
-                        &lt;3D To Level Data&gt;
-                    </a>
+                <div class="flex items-center gap-4 mb-6">
+                    <h2 class="text-4xl text-retroRed">★ Tools:</h2>
+                    <div class="flex-grow border-b border-dashed border-retroRed"></div>
                 </div>
 
-                <!-- TOOL 2 -->
-                <div class="flex flex-col items-start">
-                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
-                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
-                    </div>
-                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
-                        &lt;Images To Level Data&gt;
-                    </a>
+                <!-- CONTENEDOR DE HERRAMIENTAS -->
+                <div id="tools-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Generadas por JS -->
                 </div>
 
-                <!-- TOOL 3 -->
-                <div class="flex flex-col items-start">
-                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
-                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
+                <!-- SECCIÓN YIPIEEEEE -->
+                <div class="mt-12 mb-4 border border-dashed border-retroRed h-40 flex items-center justify-center relative p-4">
+                    <h2 class="text-5xl md:text-6xl mr-auto ml-10">Yipieeeeeee</h2>
+                    <div class="absolute right-10 bottom-2 text-sm opacity-70 text-center">
+                        [ ESPACIO PARA DOODLE:<br>Tipo en bicicleta ]
                     </div>
-                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
-                        &lt;Video To Level Data&gt;
-                    </a>
                 </div>
 
-                <!-- TOOL 4 -->
-                <div class="flex flex-col items-start">
-                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
-                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
-                    </div>
-                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
-                        &lt;Draw A Level&gt;
-                    </a>
+            </section>
+
+            <!-- DERECHA: ABOUT ME & SECONDS SURVIVED -->
+            <aside class="w-full lg:w-[350px] flex flex-col gap-6 flex-shrink-0">
+                
+                <!-- ABOUT ME -->
+                <div class="border border-retroRed p-6">
+                    <h2 class="text-4xl mb-6 text-center border-b border-retroRed pb-2">★ About Me 💀</h2>
+                    <p class="leading-tight mb-4 text-[1.3rem]">
+                        Hi! I'm just an ordinary person and not some AI geek, but I do enjoy pushing testing what it can do.
+                    </p>
+                    <p class="leading-tight text-[1.3rem]">
+                        Look, I know AI has ruined many aspects of the internet, but I'm the type of person who tries to look for the silver lining. I don't create these tools and levels to "replace" people; I do it so that more creative and fun levels can be made! Feel free to hate me or not—it's up to you—but my tools are free to use; do whatever you want with them.
+                    </p>
                 </div>
 
-            </div>
-        </section>
+                <!-- SECONDS SURVIVED (Contador Funcional) -->
+                <div class="border border-retroRed p-6 mt-auto">
+                    <h2 class="text-3xl mb-4 flex items-center gap-2">
+                        <span>⏱</span> Seconds Survived:
+                    </h2>
+                    <div class="flex justify-center" id="survival-counter">
+                        <span class="digit-box">0</span>
+                        <span class="digit-box">0</span>
+                        <span class="digit-box">0</span>
+                        <span class="digit-box">0</span>
+                        <span class="digit-box">0</span>
+                        <span class="digit-box">0</span>
+                    </div>
+                </div>
 
-        <!-- RIGHT SIDE: ABOUT ME -->
-        <aside class="w-full md:w-1/3 min-h-[400px] border border-[#801a1a] p-6 flex flex-col">
-            <h2 class="text-4xl mb-8 text-center">About Me</h2>
-            <div class="text-xl sm:text-2xl leading-relaxed flex-grow">
-                <p class="mb-4">
-                    Hi! I’m just an ordinary person and not some AI geek, but I do enjoy pushing testing what it can do. Look, I know AI has ruined many aspects of the internet, but I’m the type of person who tries to look for the silver lining. I don’t create these tools and levels to "replace" people; I do it so that more creative and fun levels can be made!
-Feel free to hate me or not—it’s up to you—but my tools are free to use; do whatever you want with them.
-                </p>
-                <p>
-                    &lt;Text&gt;
-                </p>
-            </div>
-        </aside>
+            </aside>
+        </main>
 
-    </main>
+        <!-- FOOTER -->
+        <footer class="mt-10 border-t border-dashed border-retroRed pt-4 text-center">
+            <p class="text-2xl">★ Thanks for visiting! ★</p>
+        </footer>
 
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // ==========================================
+        // 1. LISTA DE HERRAMIENTAS
+        // ==========================================
+        const myTools = [
+            {
+                title: "<3D To Level Data>",
+                desc: "Turns a 3D model into level data for Happy Wheels. Simple and easy to use!",
+                img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG", 
+                link: "3d-tool.html" 
+            },
+            {
+                title: "<Images To Level Data>",
+                desc: "Converts images into level data. Just drop your image and let it work!",
+                img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG",
+                link: "image-tool.html"
+            },
+            {
+                title: "<Video To Level Data>",
+                desc: "Create a level from a video. It's not perfect, but it works pretty well!",
+                img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG",
+                link: "video-tool.html"
+            },
+            {
+                title: "<Draw A Level>",
+                desc: "Just draw your level and turn it into a playable thing. It's simple and fun!",
+                img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG",
+                link: "draw-tool.html"
+            },
+            { title: "", desc: "", img: "", link: "#" }, 
+            { title: "", desc: "", img: "", link: "#" }
+        ];
+
+        const container = document.getElementById('tools-container');
+        
+        myTools.forEach(tool => {
+            if (tool.title.trim() !== "") {
+                const card = document.createElement('div');
+                card.className = "tool-card border border-retroRed p-4 flex flex-col hover:bg-[#1a0000] transition-colors group";
+                
+                card.innerHTML = `
+                    <div class="border border-retroRed w-full h-36 mb-4 overflow-hidden bg-black flex items-center justify-center p-1">
+                        <img src="${tool.img}" alt="${tool.title}" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-3xl mb-2 group-hover:text-white transition-colors">${tool.title}</h3>
+                    <p class="text-xl leading-tight opacity-90 flex-grow mb-6">${tool.desc}</p>
+                    <div class="text-right text-3xl font-bold">→</div>
+                    <a href="${tool.link}" title="${tool.title}"></a>
+                `;
+                container.appendChild(card);
+            }
+        });
+
+        // ==========================================
+        // 2. RELOJ FUNCIONAL
+        // ==========================================
+        function updateTime() {
+            const now = new Date();
+            const pad = (num) => num.toString().padStart(2, '0');
+            
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1);
+            const day = pad(now.getDate());
+            const hours = pad(now.getHours());
+            const minutes = pad(now.getMinutes());
+            
+            document.getElementById('datetime').innerText = `${year}-${month}-${day}  ${hours}:${minutes}`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // ==========================================
+        // 3. CONTADOR DE SEGUNDOS SOBREVIVIDOS (Real)
+        // ==========================================
+        const startTime = Date.now();
+        const counterContainer = document.getElementById('survival-counter');
+
+        setInterval(() => {
+            const secondsSurivived = Math.floor((Date.now() - startTime) / 1000);
+            const secStr = secondsSurivived.toString().padStart(6, '0');
+            
+            counterContainer.innerHTML = ''; 
+            
+            for (let char of secStr) {
+                const span = document.createElement('span');
+                span.className = 'digit-box';
+                span.innerText = char;
+                counterContainer.appendChild(span);
+            }
+        }, 1000);
+
+    </script>
 </body>
 </html>
