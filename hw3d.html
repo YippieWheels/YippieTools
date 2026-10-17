@@ -58,6 +58,8 @@ small{color:var(--mu)}
 <div class="chk"><input id="two" type="checkbox"><span>Draw both sides (if the .obj looks empty)</span></div>
 <div class="chk"><input id="flip" type="checkbox"><span>Flip faces (.obj)</span></div>
 </details>
+<label>Current level (optional) <b id="lvS"></b></label>
+<textarea id="lvl" style="width:100%;height:70px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px;font:11px monospace;resize:vertical" placeholder="Paste your level data here and the 3D model is added to it"></textarea>
 <button id="copy">Copy level data</button>
 <button id="dl" class="s">Download .txt</button>
 </aside>
@@ -791,7 +793,7 @@ const HW3D = (function () {
   function build(model, p) {
     const N = p.frames, rf = renderFrames(model, p), scale = (p.size / 2) / (rf.extent || 1);
     const cx = p.cx, floor = p.floor, my = floor - p.height;   // centro del modelo
-    let id = 0, art = 0, faces = 0;
+    let id = p.idBase || 0, art = 0, faces = 0; const GB = p.groupBase || 0, TB = p.trigBase || 0;
     let mf = null; if (p.mono) mf = monoFrames(rf, { shades: p.shades || 8, rasterRes: p.rasterRes || 160, pointBudget: p.pointBudget || 600, smooth: p.smooth === undefined ? 1 : p.smooth });
     const groups = rf.frames.map((fr, k) => {
       const sh = [];
@@ -835,35 +837,66 @@ const HW3D = (function () {
     const left = cx - WW / 2, zw = WW / N;
     if (p.mode === 'control') {
       for (let k = 0; k < N; k++) {
-        const body = []; for (let j = 0; j < N; j++) body.push(gop(j, j === k ? 100 : 0));
+        const body = []; for (let j = 0; j < N; j++) body.push(gop(j + GB, j === k ? 100 : 0));
         T({ x: left + zw * (k + 0.5), y: floor - 150, w: Math.max(5, Math.ceil(zw)), h: 300, b: p.bPlayer, r: p.rZone, i: 0, d: 0 }, body);
       }
     } else {
       // 0: arranque (jugador) | 1..N: cadena de retrasos | N+1..2N: temporizadores
-      T({ x: cx, y: floor - 150, w: WW, h: 300, b: p.bPlayer, r: 1, i: 0, d: 0 }, [tact(1)]);
+      T({ x: cx, y: floor - 150, w: WW, h: 300, b: p.bPlayer, r: 1, i: 0, d: 0 }, [tact(1 + TB)]);
       for (let k = 0; k < N; k++) {
-        const body = [tact(N + 1 + k)]; if (k < N - 1) body.push(tact(2 + k));
+        const body = [tact(N + 1 + k + TB)]; if (k < N - 1) body.push(tact(2 + k + TB));
         T({ x: 150 + k * 3, y: 200, w: 40, h: 40, b: p.bTimer, r: 1, i: 0, d: k === 0 ? 0 : p.dt }, body);
       }
       for (let k = 0; k < N; k++)
-        T({ x: 150 + k * 3, y: 300, w: 40, h: 40, b: p.bTimer, r: 4, i: +(N * p.dt).toFixed(3), d: 0 }, [gop(k, 100), gop((k - 1 + N) % N, 0)]);
+        T({ x: 150 + k * 3, y: 300, w: 40, h: 40, b: p.bTimer, r: 4, i: +(N * p.dt).toFixed(3), d: 0 }, [gop(k + GB, 100), gop((k - 1 + N) % N + GB, 0)]);
     }
 
+    const pieces = { shapes, specials, groups, trig };
     const startX = p.mode === 'control' ? left + 40 : cx - 150;
     const xml = `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${r1(startX)}" y="${r1(floor - 60)}" c="${p.vehicle}" f="t" h="f" bg="0" bgc="1710618" e="1"/>\n` +
       `    <shapes>\n        ${shapes.join('\n        ')}\n    </shapes>\n    <specials>\n        ${specials.join('\n        ')}\n    </specials>\n` +
       `    <groups>\n${groups.join('\n')}\n    </groups>\n    <triggers>\n${trig.join('\n')}\n    </triggers>\n</levelXML>\n`;
-    return { xml, rf, scale, art, facesPerFrame: Math.round(faces / N), maxFaces: Math.max(...rf.frames.map((f) => f.polys.length)), triggers: trig.length, groups: N, cy: my, mono: mf, points: mf ? mf.points : 0 };
+    return { xml, rf, scale, art, facesPerFrame: Math.round(faces / N), maxFaces: Math.max(...rf.frames.map((f) => f.polys.length)), pieces, triggers: trig.length, groups: N, cy: my, mono: mf, points: mf ? mf.points : 0 };
   }
 
-  return { MODELS, parseOBJ, renderFrames, build };
+
+  /* adds the pieces of a build() into an existing level, keeping its real section order */
+  function inspectLevel(L) {
+    const sec = (n) => { const m = new RegExp('<' + n + '\\b[^>]*>([\\s\\S]*?)</' + n + '>').exec(L); return m ? m[1] : ''; };
+    const ids = [...L.matchAll(/<v\b[^>]*?\bid="(-?\d+)"/g)].map((m) => +m[1]);
+    const info = /<info\b[^>]*>/.exec(L), num = (k) => { const m = info && new RegExp('\\b' + k + '="(-?[\\d.]+)"').exec(info[0]); return m ? +m[1] : null; };
+    return { valid: /<levelXML[\s>]/.test(L) && /<\/levelXML>/.test(L), idBase: ids.length ? Math.max(...ids) + 1 : 0,
+      groups: (sec('groups').match(/<g\s+x=/g) || []).length, trigs: (sec('triggers').match(/<t\s+x=/g) || []).length,
+      art: (L.match(/<sh\b[^>]*\bi="f"/g) || []).length, x: num('x'), y: num('y') };
+  }
+  function mergeLevel(L, pc) {
+    const ind = (arr) => arr.join('\n').split('\n').map((l) => '        ' + l).join('\n');
+    const ORDER = ['shapes', 'specials', 'groups', 'joints', 'triggers'];
+    const add = (name, arr) => {
+      if (!arr.length) return;
+      const body = ind(arr);
+      if (new RegExp('</' + name + '>').test(L)) { L = L.replace(new RegExp('</' + name + '>'), () => body + '\n    </' + name + '>'); return; }
+      const blk = `    <${name}>\n${body}\n    </${name}>\n`;
+      L = L.replace(new RegExp('<' + name + '\\s*/>[ \\t]*\\n?'), () => blk);
+      if (L.includes(blk)) return;
+      const prev = ORDER.slice(0, ORDER.indexOf(name)).reverse();
+      for (const q of prev.map((n) => new RegExp('</' + n + '>[ \\t]*\\n?')).concat([/<info\b[^>]*\/>[ \t]*\n?/])) {
+        if (q.test(L)) { L = L.replace(q, (m) => m.replace(/\n?$/, '\n') + blk); return; }
+      }
+      L = L.replace(/<levelXML>/, '<levelXML>\n' + blk);
+    };
+    ORDER.forEach((n) => { if (n !== 'joints') add(n, pc[n === 'triggers' ? 'trig' : n]); });
+    return L;
+  }
+
+  return { MODELS, parseOBJ, renderFrames, build, inspectLevel, mergeLevel };
 })();
 if (typeof module !== 'undefined') module.exports = HW3D;
 
 </script>
 <script>
 const $=id=>document.getElementById(id);
-let objModel=null,last=null,timer=null,anim=null;
+let cur=null,objModel=null,last=null,timer=null,anim=null;
 const num=id=>+$(id).value, hexRGB=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
 function labels(){[['frames','vN'],['shades','vH'],['rres','vR'],['pbud','vB'],['detail','vD'],['size','vS'],['pitch','vP'],['persp','vQ'],['dt','vT']].forEach(([a,b])=>$(b).textContent=$(a).value);
   $('monoOpts').style.display=$('opt').value==='mono'?'block':'none';$('autoOpts').style.display=$('mode').value==='auto'?'block':'none';$('obj').style.display=$('model').value==='obj'?'block':'none'}
@@ -876,10 +909,12 @@ function run(){
     spec:$('spec').checked,flip:$('flip').checked,twoSided:$('two').checked,outline:$('outline').checked,size:num('size'),cx:num('cx'),floor:num('floor'),
     height:Math.round(num('size')*0.6),arenaW:num('arena'),foreground:$('fore').checked,mode:$('mode').value,vehicle:num('veh'),
     opAct:num('opa'),trigAct:num('tra'),bPlayer:num('bp'),bTimer:num('bt'),rZone:num('rz'),dt:num('dt'),mono:$('opt').value==='mono',shades:num('shades'),rasterRes:num('rres'),pointBudget:num('pbud'),smooth:1,backColor:parseInt($('back').value.slice(1),16)};
-  const r=HW3D.build(model,p);last={r,p,model};
+  if(cur){p.idBase=cur.idBase;p.groupBase=cur.groups;p.trigBase=cur.trigs}
+  const r=HW3D.build(model,p);
+  r.out=cur?HW3D.mergeLevel($('lvl').value,r.pieces):r.xml;last={r,p,model};
   $('fr').max=p.frames-1;if(+$('fr').value>p.frames-1)$('fr').value=0;
-  const kb=Math.round(r.xml.length/1024),over=r.art>10000;
-  $('stats').innerHTML=`<b>${p.frames}</b> frames · <b>${r.facesPerFrame}</b> ${p.mono?'art shapes':'faces'} per frame${p.mono?' · <b>'+r.points+'</b> points':''} · total art <b>${r.art}</b> / 10000 · <b>${r.triggers}</b> triggers · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
+  const kb=Math.round(r.out.length/1024),art=(cur?cur.art:0)+r.art,over=art>10000;
+  $('stats').innerHTML=`<b>${p.frames}</b> frames · <b>${r.facesPerFrame}</b> ${p.mono?'art shapes':'faces'} per frame${p.mono?' · <b>'+r.points+'</b> points':''} · total art <b>${art}</b> / 10000${cur?' (incl. your level)':''} · <b>${r.triggers}</b> triggers · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
    (over?'<br><span class="warn">Over the art limit: lower the frames or the detail.</span>':'')+
    (kb>900?'<br><span class="warn">Very large file: if the game freezes on import, lower the frames or the detail.</span>':'')+
    (p.mode==='control'?`<br>Each floor zone is ${(p.arenaW/p.frames).toFixed(1)} px wide.`:'');
@@ -900,9 +935,17 @@ $('play').onclick=()=>{if(anim){clearInterval(anim);anim=null;$('play').textCont
   $('play').textContent='❚❚ Pause';anim=setInterval(()=>{const n=last?last.p.frames:1;$('fr').value=(+$('fr').value+1)%n;draw()},90)};
 $('obj').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=()=>{try{objModel=HW3D.parseOBJ(rd.result);run()}catch(err){objModel=null;$('stats').innerHTML='<span class="warn">'+err.message+'</span>'}};rd.readAsText(f)};
-$('copy').onclick=async()=>{if(!last)return;const x=last.r.xml;
+$('copy').onclick=async()=>{if(!last)return;const x=last.r.out;
   try{await navigator.clipboard.writeText(x)}catch(_){const t=document.createElement('textarea');t.value=x;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
   $('copy').textContent='Copied!';setTimeout(()=>$('copy').textContent='Copy level data',1500)};
-$('dl').onclick=()=>{if(!last)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([last.r.xml],{type:'text/plain'}));a.download='model3d_levelxml.txt';a.click()};
+$('dl').onclick=()=>{if(!last)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([last.r.out],{type:'text/plain'}));a.download='model3d_levelxml.txt';a.click()};
+$('lvl').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{
+  const v=$('lvl').value.trim();
+  if(!v){cur=null;$('lvS').textContent='';return run()}
+  const i=HW3D.inspectLevel(v);
+  if(!i.valid){cur=null;$('lvS').textContent='not valid';return run()}
+  cur=i;$('lvS').textContent=i.art+' art';
+  if(i.x!=null&&i.y!=null){$('cx').value=Math.max(Math.round(num('arena')/2)+80,Math.round(i.x+num('arena')/2));$('floor').value=Math.round(i.y+60)}
+  run()},300)});
 run();
 </script></body></html>
