@@ -62,7 +62,7 @@
 <body class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto text-xl sm:text-2xl selection:bg-retroRed selection:text-retroBg">
 
     <!-- CONTENEDOR PRINCIPAL -->
-    <div class="border-2 border-retroRed p-6 relative">
+    <div class="border-2 border-retroRed p-6 relative flex flex-col min-h-[90vh]">
 
         <!-- HEADER -->
         <header class="relative mb-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -93,31 +93,31 @@
 
         <!-- FECHA Y HORA FUNCIONAL -->
         <div class="text-right mb-2 text-xl sm:text-2xl flex justify-end items-center gap-4">
-            <span id="datetime">2026-10-06  22:47</span>
+            <span id="datetime">...</span>
             <span class="text-2xl">★</span>
         </div>
 
         <hr class="border-retroRed mb-6">
 
         <!-- GRID PRINCIPAL -->
-        <main class="flex flex-col lg:flex-row gap-8">
+        <main class="flex flex-col lg:flex-row gap-8 flex-grow">
             
             <!-- IZQUIERDA: HERRAMIENTAS -->
-            <section class="flex-grow">
+            <section class="flex-grow flex flex-col">
                 
                 <div class="flex items-center gap-4 mb-6">
                     <h2 class="text-4xl text-retroRed">★ Tools:</h2>
                     <div class="flex-grow border-b border-dashed border-retroRed"></div>
                 </div>
 
-                <!-- CONTENEDOR DE HERRAMIENTAS -->
-                <div id="tools-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- CONTENEDOR DE HERRAMIENTAS (Alineación compacta) -->
+                <div id="tools-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start flex-grow">
                     <!-- Generadas por JS -->
                 </div>
 
-                <!-- SECCIÓN YIPIEEEEE -->
-                <div class="mt-12 mb-4 border border-dashed border-retroRed h-40 flex items-center justify-center relative p-4">
-                    <h2 class="text-5xl md:text-6xl mr-auto ml-10">Yipieeeeeee</h2>
+                <!-- SECCIÓN YIPPIEEEEE -->
+                <div class="mt-12 border border-dashed border-retroRed h-40 flex items-center justify-center relative p-4 shrink-0">
+                    <h2 class="text-5xl md:text-6xl mr-auto ml-10">Yippieeeee</h2>
                     <div class="absolute right-10 bottom-2 text-sm opacity-70 text-center">
                         [ ESPACIO PARA DOODLE:<br>Tipo en bicicleta ]
                     </div>
@@ -128,19 +128,22 @@
             <!-- DERECHA: ABOUT ME & SECONDS SURVIVED -->
             <aside class="w-full lg:w-[350px] flex flex-col gap-6 flex-shrink-0">
                 
-                <!-- ABOUT ME -->
-                <div class="border border-retroRed p-6">
-                    <h2 class="text-4xl mb-6 text-center border-b border-retroRed pb-2">★ About Me 💀</h2>
-                    <p class="leading-tight mb-4 text-[1.3rem]">
-                        Hi! I'm just an ordinary person and not some AI geek, but I do enjoy pushing testing what it can do.
-                    </p>
-                    <p class="leading-tight text-[1.3rem]">
-                        Look, I know AI has ruined many aspects of the internet, but I'm the type of person who tries to look for the silver lining. I don't create these tools and levels to "replace" people; I do it so that more creative and fun levels can be made! Feel free to hate me or not—it's up to you—but my tools are free to use; do whatever you want with them.
-                    </p>
+                <!-- ABOUT ME (Ahora se estira y centra el texto) -->
+                <div class="border border-retroRed p-6 flex-grow flex flex-col">
+                    <h2 class="text-4xl mb-6 text-center border-b border-retroRed pb-2 shrink-0">★ About Me 💀</h2>
+                    
+                    <div class="flex-grow flex flex-col justify-center">
+                        <p class="leading-tight mb-4 text-[1.3rem]">
+                            Hi! I'm just an ordinary person and not some AI geek, but I do enjoy pushing testing what it can do.
+                        </p>
+                        <p class="leading-tight text-[1.3rem]">
+                            Look, I know AI has ruined many aspects of the internet, but I'm the type of person who tries to look for the silver lining. I don't create these tools and levels to "replace" people; I do it so that more creative and fun levels can be made! Feel free to hate me or not—it's up to you—but my tools are free to use; do whatever you want with them.
+                        </p>
+                    </div>
                 </div>
 
-                <!-- SECONDS SURVIVED (Contador Funcional) -->
-                <div class="border border-retroRed p-6 mt-auto">
+                <!-- SECONDS SURVIVED -->
+                <div class="border border-retroRed p-6 shrink-0">
                     <h2 class="text-3xl mb-4 flex items-center gap-2">
                         <span>⏱</span> Seconds Survived:
                     </h2>
@@ -158,7 +161,7 @@
         </main>
 
         <!-- FOOTER -->
-        <footer class="mt-10 border-t border-dashed border-retroRed pt-4 text-center">
+        <footer class="mt-10 border-t border-dashed border-retroRed pt-4 text-center shrink-0">
             <p class="text-2xl">★ Thanks for visiting! ★</p>
         </footer>
 
@@ -168,28 +171,30 @@
     <script>
         // ==========================================
         // 1. LISTA DE HERRAMIENTAS
+        // Para que se vean los corchetes angulares (< >) 
+        // usamos &lt; y &gt; para que el navegador no se confunda.
         // ==========================================
         const myTools = [
             {
-                title: "<3D To Level Data>",
+                title: "&lt;3D To Level Data&gt;",
                 desc: "Turns a 3D model into level data for Happy Wheels. Simple and easy to use!",
                 img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG", 
                 link: "3d-tool.html" 
             },
             {
-                title: "<Images To Level Data>",
+                title: "&lt;Images To Level Data&gt;",
                 desc: "Converts images into level data. Just drop your image and let it work!",
                 img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG",
                 link: "image-tool.html"
             },
             {
-                title: "<Video To Level Data>",
+                title: "&lt;Video To Level Data&gt;",
                 desc: "Create a level from a video. It's not perfect, but it works pretty well!",
                 img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG",
                 link: "video-tool.html"
             },
             {
-                title: "<Draw A Level>",
+                title: "&lt;Draw A Level&gt;",
                 desc: "Just draw your level and turn it into a playable thing. It's simple and fun!",
                 img: "https://placehold.co/400x250/0a0a0a/e50000?text=IMG",
                 link: "draw-tool.html"
@@ -203,16 +208,17 @@
         myTools.forEach(tool => {
             if (tool.title.trim() !== "") {
                 const card = document.createElement('div');
+                // Se removieron clases de estiramiento para que sean compactos
                 card.className = "tool-card border border-retroRed p-4 flex flex-col hover:bg-[#1a0000] transition-colors group";
                 
                 card.innerHTML = `
                     <div class="border border-retroRed w-full h-36 mb-4 overflow-hidden bg-black flex items-center justify-center p-1">
-                        <img src="${tool.img}" alt="${tool.title}" class="w-full h-full object-cover">
+                        <img src="${tool.img}" alt="Tool Image" class="w-full h-full object-cover">
                     </div>
                     <h3 class="text-3xl mb-2 group-hover:text-white transition-colors">${tool.title}</h3>
-                    <p class="text-xl leading-tight opacity-90 flex-grow mb-6">${tool.desc}</p>
-                    <div class="text-right text-3xl font-bold">→</div>
-                    <a href="${tool.link}" title="${tool.title}"></a>
+                    <p class="text-xl leading-tight opacity-90 mb-4">${tool.desc}</p>
+                    <div class="text-right text-3xl font-bold mt-auto">→</div>
+                    <a href="${tool.link}" class="absolute inset-0 z-10" title="Open Tool"></a>
                 `;
                 container.appendChild(card);
             }
