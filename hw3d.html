@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Engine for Happy Wheels</title>
+<style>
+:root{--bg:#14111f;--pn:#1e1a2e;--tx:#ece8f5;--mu:#9a93b0;--ac:#ffc424;--bd:#34304a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;display:flex;min-height:100vh}
+aside{width:340px;padding:18px;background:var(--pn);border-right:1px solid var(--bd);overflow:auto;max-height:100vh;position:sticky;top:0}
+main{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h1{font-size:18px;margin:0 0 6px;color:var(--ac)}
+label{display:block;margin-top:11px;font-size:13px;color:var(--mu)}label b{color:var(--tx);float:right}
+input[type=range]{width:100%;accent-color:var(--ac)}
+select,input[type=number]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px}
+input[type=color]{width:100%;height:32px;background:var(--bg);border:1px solid var(--bd);border-radius:6px}
+.row{display:flex;gap:8px}.row>div{flex:1}
+.chk{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px;color:var(--tx)}
+button{background:var(--ac);color:#1b1500;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
+button.s{background:var(--bd);color:var(--tx)}
+details{margin-top:12px;font-size:13px;color:var(--mu)}summary{cursor:pointer}
+#stats{font-size:13px;color:var(--mu);line-height:1.55}#stats b{color:var(--tx)}.warn{color:#ff8a8a}
+#stage{flex:1;display:flex;align-items:center;justify-content:center;background:#0c0a14;border:1px solid var(--bd);border-radius:10px;min-height:320px}
+canvas{max-width:100%;max-height:100%}
+.ctl{display:flex;gap:10px;align-items:center}.ctl button{width:110px;margin:0}.ctl input{flex:1}
+small{color:var(--mu)}
+.ai{margin-top:8px;padding:7px 9px;border:1px solid #ff4d8d;border-radius:6px;background:#ff4d8d1a;color:#ff5c9a;font-size:12px;font-weight:700;line-height:1.4}
+@media(max-width:760px){body{flex-direction:column}aside{width:auto;max-height:none;position:static}}
+</style></head><body>
+<aside>
+<h1>3D Engine → Happy Wheels</h1>
+<small>Generates a level with a spinning 3D model. Try the cube first (small file).</small>
+<div class="ai">⚠ This program was made by an AI for experimental purposes. Expect bugs of all kinds.</div>
+<label>Model</label>
+<select id="model"><option value="tetera">Teapot</option><option value="cubo">Cube</option><option value="esfera">Faceted sphere</option><option value="toro">Torus (donut)</option><option value="obj">.obj file…</option></select>
+<input id="obj" type="file" accept=".obj" style="display:none;margin-top:6px;color:var(--mu)">
+<label>Mode</label>
+<select id="mode"><option value="control">Player-controlled (driving rotates the model)</option><option value="auto">Automatic (spins by itself)</option></select>
+<label>Frames per turn <b id="vN"></b></label><input id="frames" type="range" min="8" max="72" step="1" value="24">
+<label>Model detail <b id="vD"></b></label><input id="detail" type="range" min="0.5" max="1.6" step="0.1" value="0.7">
+<label>Model size <b id="vS"></b></label><input id="size" type="range" min="100" max="300" step="10" value="220">
+<label>Tilt (view from above) <b id="vP"></b></label><input id="pitch" type="range" min="0" max="60" step="1" value="22">
+<label>Perspective (0 = none) <b id="vQ"></b></label><input id="persp" type="range" min="0" max="10" step="0.5" value="4">
+<div class="row"><div><label>Color</label><input id="color" type="color" value="#4a86d6"></div><div><label>Viewer background</label><input id="back" type="color" value="#1b1530"></div></div>
+<div class="chk"><input id="spec" type="checkbox" checked><span>Shine</span></div>
+<div class="chk"><input id="outline" type="checkbox" checked><span>Same-color outline (avoids lines between faces)</span></div>
+<div class="chk"><input id="fore" type="checkbox"><span>Draw the model in front of the vehicle</span></div>
+<div class="row"><div><label>Arena width</label><input id="arena" type="number" value="360"></div><div><label>Vehicle</label><select id="veh"><option value="1">Wheelchair</option><option value="2">Segway</option><option value="4">Shopping cart</option></select></div></div>
+<div id="autoOpts" style="display:none"><label>Seconds per frame <b id="vT"></b></label><input id="dt" type="range" min="0.05" max="0.3" step="0.01" value="0.1"></div>
+<details><summary>Advanced options</summary>
+<div class="row"><div><label>"Triggered by" player</label><input id="bp" type="number" value="1"></div><div><label>"Triggered by" timers</label><input id="bt" type="number" value="5"></div></div>
+<div class="row"><div><label>Zone repeat type</label><input id="rz" type="number" value="2"></div><div><label>Initial rotation (°)</label><input id="yaw0" type="number" value="20"></div></div>
+<div class="row"><div><label>"Change opacity" action (group)</label><input id="opa" type="number" value="1"></div><div><label>"Activate" action (trigger)</label><input id="tra" type="number" value="0"></div></div>
+<div class="row"><div><label>Position x</label><input id="cx" type="number" value="1000"></div><div><label>Floor height (y)</label><input id="floor" type="number" value="5400"></div></div>
+<div class="chk"><input id="two" type="checkbox"><span>Draw both sides (if the .obj looks empty)</span></div>
+<div class="chk"><input id="flip" type="checkbox"><span>Flip faces (.obj)</span></div>
+</details>
+<button id="copy">Copy level data</button>
+<button id="dl" class="s">Download .txt</button>
+</aside>
+<main>
+<div id="stats"></div>
+<div id="stage"><canvas id="cv" width="640" height="420"></canvas></div>
+<div class="ctl"><button id="play" class="s">▶ Spin</button><input id="fr" type="range" min="0" max="23" value="0"><small id="frl"></small></div>
+</main>
+<script>
+/* HW3D: "motor 3D" precalculado para Happy Wheels.
+   Renderiza N fotogramas del modelo girando (proyeccion, culling, orden de pintor, sombreado plano)
+   como grupos de arte, y los muestra con triggers de opacidad:
+   - modo "control": zonas en el piso; la posicion del jugador elige el fotograma.
+   - modo "auto":    cadena de retrasos + temporizadores que ciclan los fotogramas solos. */
+const HW3D = (function () {
+  'use strict';
+  const V = {
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+    dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    len: (a) => Math.hypot(a[0], a[1], a[2]),
+    norm: (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  };
+
+  // ------------------------------------------------------------------ geometria
+  function newell(p) {
+    let nx = 0, ny = 0, nz = 0;
+    for (let i = 0; i < p.length; i++) {
+      const a = p[i], b = p[(i + 1) % p.length];
+      nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]);
+    }
+    return V.norm([nx, ny, nz]);
+  }
+  function dedupe(p) {
+    const o = [];
+    for (const q of p) { const l = o[o.length - 1]; if (!l || V.len(V.sub(q, l)) > 1e-6) o.push(q); }
+    if (o.length > 1 && V.len(V.sub(o[0], o[o.length - 1])) < 1e-6) o.pop();
+    return o;
+  }
+  // agrega una cara orientada hacia afuera respecto de 'ctr' (punto interior local)
+  function addFace(M, pts, ctr, part) {
+    let p = dedupe(pts); if (p.length < 3) return;
+    const n = newell(p), m = V.mul(p.reduce((a, b) => V.add(a, b), [0, 0, 0]), 1 / p.length);
+    if (ctr && V.dot(n, V.sub(m, ctr)) < 0) p = p.slice().reverse();
+    M.faces.push({ p, part });
+  }
+  function revolve(M, prof, seg, part, y0) {
+    const ring = (i, u) => { const a = (u / seg) * Math.PI * 2; return [prof[i][0] * Math.cos(a), prof[i][1], prof[i][0] * Math.sin(a)]; };
+    for (let i = 0; i < prof.length - 1; i++) for (let u = 0; u < seg; u++)
+      addFace(M, [ring(i, u), ring(i, u + 1), ring(i + 1, u + 1), ring(i + 1, u)], [0, (prof[i][1] + prof[i + 1][1]) / 2, 0], part);
+  }
+  function sweep(M, center, radius, seg, part) {
+    const n = center.length, rings = [], cs = [];
+    for (let i = 0; i < n; i++) {
+      const t = V.norm(V.sub(center[Math.min(n - 1, i + 1)], center[Math.max(0, i - 1)]));
+      const b = [0, 0, 1], nm = V.norm(V.cross(b, t)); const ring = [];
+      for (let u = 0; u < seg; u++) { const a = (u / seg) * Math.PI * 2; ring.push(V.add(center[i], V.add(V.mul(nm, radius[i] * Math.cos(a)), V.mul(b, radius[i] * Math.sin(a))))); }
+      rings.push(ring);
+    }
+    for (let i = 0; i < n - 1; i++) for (let u = 0; u < seg; u++) {
+      const u2 = (u + 1) % seg;
+      addFace(M, [rings[i][u], rings[i][u2], rings[i + 1][u2], rings[i + 1][u]], V.mul(V.add(center[i], center[i + 1]), 0.5), part);
+    }
+  }
+  const bez = (P, t) => { const s = 1 - t; let o = [0, 0, 0]; const n = P.length - 1;
+    const C = n === 2 ? [1, 2, 1] : [1, 3, 3, 1];
+    P.forEach((p, i) => { o = V.add(o, V.mul(p, C[i] * Math.pow(s, n - i) * Math.pow(t, i))); }); return o; };
+  function normalize(M) {
+    let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+    M.faces.forEach((f) => f.p.forEach((q) => { for (let i = 0; i < 3; i++) { mn[i] = Math.min(mn[i], q[i]); mx[i] = Math.max(mx[i], q[i]); } }));
+    const c = V.mul(V.add(mn, mx), 0.5); let r = 0;
+    M.faces.forEach((f) => { f.p = f.p.map((q) => V.sub(q, c)); f.p.forEach((q) => (r = Math.max(r, V.len(q)))); });
+    M.faces.forEach((f) => (f.p = f.p.map((q) => V.mul(q, 1 / r))));
+    return M;
+  }
+
+  const MODELS = {
+    cubo() {
+      const M = { faces: [] }, s = 0.72;
+      const P = (x, y, z) => [x * s, y * s, z * s];
+      [[[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]],
+       [[-1, -1, -1], [-1, -1, 1], [-1, 1, 1], [-1, 1, -1]], [[1, -1, 1], [1, -1, -1], [1, 1, -1], [1, 1, 1]],
+       [[-1, 1, 1], [1, 1, 1], [1, 1, -1], [-1, 1, -1]], [[-1, -1, -1], [1, -1, -1], [1, -1, 1], [-1, -1, 1]]]
+        .forEach((q) => addFace(M, q.map((a) => P(...a)), [0, 0, 0], 0));
+      return normalize(M);
+    },
+    esfera() { // icosaedro subdividido una vez (80 caras)
+      const t = (1 + Math.sqrt(5)) / 2;
+      let v = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(V.norm);
+      let f = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+      const cache = {}, mid = (a, b) => { const k = a < b ? a + '_' + b : b + '_' + a; if (cache[k] === undefined) { v.push(V.norm(V.mul(V.add(v[a], v[b]), 0.5))); cache[k] = v.length - 1; } return cache[k]; };
+      const g = []; f.forEach(([a, b, c]) => { const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a); g.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]); });
+      const M = { faces: [] }; g.forEach((tr) => addFace(M, tr.map((i) => v[i]), [0, 0, 0], 0));
+      return normalize(M);
+    },
+    toro(d = 1) {
+      const M = { faces: [] }, U = Math.max(8, Math.round(22 * d)), W = Math.max(6, Math.round(11 * d)), R = 0.68, r = 0.32;
+      const P = (u, w) => { const a = (u / U) * Math.PI * 2, b = (w / W) * Math.PI * 2;
+        return [(R + r * Math.cos(b)) * Math.cos(a), r * Math.sin(b), (R + r * Math.cos(b)) * Math.sin(a)]; };
+      for (let u = 0; u < U; u++) for (let w = 0; w < W; w++) {
+        const a = ((u + 0.5) / U) * Math.PI * 2;
+        addFace(M, [P(u, w), P(u + 1, w), P(u + 1, w + 1), P(u, w + 1)], [R * Math.cos(a), 0, R * Math.sin(a)], 0);
+      }
+      return normalize(M);
+    },
+    tetera(d = 1) {
+      const M = { faces: [] }, S = Math.max(8, Math.round(18 * d)), SS = Math.max(6, Math.round(10 * d)), SH = Math.max(5, Math.round(8 * d));
+      revolve(M, [[0, 0], [0.38, 0.02], [0.62, 0.08], [0.8, 0.2], [0.9, 0.36], [0.92, 0.5], [0.86, 0.65], [0.72, 0.78], [0.6, 0.84]], S, 0);
+      revolve(M, [[0.6, 0.84], [0.62, 0.87], [0.46, 0.93], [0.28, 1.0], [0.14, 1.05], [0, 1.07]], S, 1);
+      revolve(M, [[0, 1.07], [0.1, 1.08], [0.12, 1.12], [0.08, 1.17], [0, 1.19]], Math.max(6, Math.round(10 * d)), 2);
+      const sp = [], spr = []; for (let i = 0; i <= 8; i++) { const t = i / 8; sp.push(bez([[0.78, 0.3, 0], [1.28, 0.3, 0], [1.52, 0.86, 0]], t)); spr.push(0.2 - 0.11 * t); }
+      sweep(M, sp, spr, SS, 3);
+      const hd = [], hr = []; for (let i = 0; i <= 12; i++) { const t = i / 12; hd.push(bez([[-0.8, 0.74, 0], [-1.6, 0.86, 0], [-1.55, 0.2, 0], [-0.84, 0.26, 0]], t)); hr.push(0.075); }
+      sweep(M, hd, hr, SH, 4);
+      M.faces.forEach((f) => (f.p = f.p.map((q) => [q[0], q[1] * 1.3, q[2]]))); // mas alta
+      return normalize(M);
+    },
+  };
+
+  function parseOBJ(text) {
+    const vs = [], M = { faces: [] };
+    for (const line of text.split(/\r?\n/)) {
+      const t = line.trim().split(/\s+/);
+      if (t[0] === 'v') vs.push([+t[1], +t[2], +t[3]]);
+      else if (t[0] === 'f') {
+        const idx = t.slice(1).map((s) => { const k = parseInt(s, 10); return k < 0 ? vs.length + k : k - 1; });
+        if (idx.length >= 3 && idx.every((k) => vs[k])) M.faces.push({ p: idx.map((k) => vs[k]), part: 0 });
+      }
+    }
+    if (!M.faces.length) throw new Error('The OBJ file has no faces');
+    return normalize(M);
+  }
+
+  // ------------------------------------------------------------------ render
+  const hex = (c) => (c[0] << 16) | (c[1] << 8) | c[2];
+  const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  /* o: {frames,pitch,yaw0,persp,color:[r,g,b],spec,flip,twoSided,outline} -> {frames:[{polys:[{pts,color}]}],extent} */
+  function renderFrames(model, o) {
+    const N = o.frames, pit = (o.pitch * Math.PI) / 180, cp = Math.cos(pit), sp = Math.sin(pit);
+    const D = o.persp > 0 ? o.persp : 0, L = V.norm([-0.45, 0.65, 0.62]);
+    const frames = []; let ext = 0;
+    for (let k = 0; k < N; k++) {
+      const th = ((o.yaw0 || 0) * Math.PI) / 180 + (k / N) * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
+      const rot = (q) => { const x = q[0] * c + q[2] * s, z = -q[0] * s + q[2] * c; return [x, q[1] * cp - z * sp, q[1] * sp + z * cp]; };
+      const out = [];
+      for (const f of model.faces) {
+        let P = f.p.map(rot); if (o.flip) P = P.slice().reverse();
+        const n = newell(P), m = V.mul(P.reduce((a, b) => V.add(a, b), [0, 0, 0]), 1 / P.length);
+        const toEye = D ? V.sub([0, 0, D], m) : [0, 0, 1];
+        let facing = V.dot(n, toEye) > 0;
+        if (!facing && !o.twoSided) continue;
+        const nn = facing ? n : V.mul(n, -1);
+        const diff = Math.max(0, V.dot(nn, L)), r = V.sub(V.mul(nn, 2 * V.dot(nn, L)), L);
+        const spec = o.spec ? Math.pow(Math.max(0, r[2]), 24) * 0.55 : 0, ia = 0.22 + 0.82 * diff;
+        const base = (o.partColors && o.partColors[f.part]) || o.color;
+        const col = [clamp(base[0] * ia + 255 * spec), clamp(base[1] * ia + 255 * spec), clamp(base[2] * ia + 255 * spec)];
+        const pts = P.map((q) => { const sc = D ? D / (D - q[2]) : 1; return [q[0] * sc, -q[1] * sc]; });
+        for (const q of pts) ext = Math.max(ext, Math.abs(q[0]), Math.abs(q[1]));
+        out.push({ pts, z: m[2], color: col });
+      }
+      out.sort((a, b) => a.z - b.z);
+      frames.push({ polys: out });
+    }
+    return { frames, extent: ext };
+  }
+
+  // ------------------------------------------------------------------ XML
+  const r1 = (v) => Math.round(v * 10) / 10;
+  function artXml(pts, color, outline, id) {
+    const Q = pts.map((p) => [r1(p[0]), r1(p[1])]);
+    let a = 1e9, b = 1e9, c = -1e9, d = -1e9; Q.forEach((q) => { a = Math.min(a, q[0]); c = Math.max(c, q[0]); b = Math.min(b, q[1]); d = Math.max(d, q[1]); });
+    const w = Math.max(2, Math.round(c - a)), h = Math.max(2, Math.round(d - b)), cx = (a + c) / 2, cy = (b + d) / 2;
+    return { cx, cy, w, h, vs: Q.map((q, i) => `v${i}="${r1(q[0] - cx)}_${r1(q[1] - cy)}"`).join(' '), n: Q.length, color, outline, id };
+  }
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  /* p: opciones del nivel. Devuelve {xml, stats, frames, scale, ...} */
+  function build(model, p) {
+    const N = p.frames, rf = renderFrames(model, p), scale = (p.size / 2) / (rf.extent || 1);
+    const cx = p.cx, floor = p.floor, my = floor - p.height;   // centro del modelo
+    let id = 0, art = 0, faces = 0;
+    const groups = rf.frames.map((fr, k) => {
+      const sh = [];
+      for (const q of fr.polys) {
+        const pts = q.pts.map((t) => [cx + t[0] * scale, my + t[1] * scale]);
+        const A = artXml(pts, hex(q.color), p.outline ? hex(q.color) : -1, id++);
+        if (A.n < 3) continue;
+        sh.push(`<sh t="4" i="f" p0="${r1(A.cx)}" p1="${r1(A.cy)}" p2="${A.w}" p3="${A.h}" p4="0" p5="f" p6="f" p7="1" p8="${A.color}" p9="${A.outline}" p10="100" p11="1"><v f="t" id="${A.id}" n="${A.n}" ${A.vs}/></sh>`);
+      }
+      faces += sh.length; art += sh.length;
+      const op = k === 0 ? 100 : 0;
+      return `<g x="${r1(cx)}" y="${r1(my)}" r="0" ox="${-r1(cx)}" oy="${-r1(my)}" s="f" f="${p.foreground ? 't' : 'f'}" o="${op}" im="f" fr="f">\n${sh.join('\n')}\n</g>`;
+    });
+
+    // ----- escenario -----
+    const shapes = [], specials = [], WW = p.arenaW, wallH = 700, th = 300;
+    const rect = (x, y, w, h, col, inter, op) => { shapes.push(`<sh t="0"${inter ? '' : ' i="f"'} p0="${r1(x)}" p1="${r1(y)}" p2="${Math.round(w)}" p3="${Math.round(h)}" p4="0" p5="t" p6="f" p7="1" p8="${col}" p9="-1" p10="${op || 100}" p11="1"/>`); if (!inter) art++; };
+    rect(cx, floor + th / 2, WW + 120, th, 0x3a2a63, true);                       // piso
+    rect(cx - WW / 2 - 40, floor - wallH / 2 + 10, 40, wallH, 0x3a2a63, true);    // paredes
+    rect(cx + WW / 2 + 40, floor - wallH / 2 + 10, 40, wallH, 0x3a2a63, true);
+    rect(cx, my, p.size * 1.35, p.size * 1.35, p.backColor === undefined ? 0x1b1530 : p.backColor, false, 100);             // fondo del visor
+    rect(cx, floor - 3, WW, 6, 0xffc424, false, 100);                              // franja del piso
+    const txt = (x, y, s, size, col) => specials.push(`<sp t="16" p0="${r1(x)}" p1="${r1(y)}" p2="0" p3="${col}" p4="2" p5="${size}" p6="1" p8="100"><p7><![CDATA[${esc(s)}]]></p7></sp>`);
+    txt(cx - 130, floor - 50, p.mode === 'control' ? 'Move the vehicle left and right to rotate the model' : 'Spinning 3D model', 12, 0xece8f5);
+
+    // ----- triggers -----
+    const trig = [], T = (a, body) => trig.push(`<t x="${r1(a.x)}" y="${r1(a.y)}" w="${a.w}" h="${a.h}" a="0" b="${a.b}" t="1" r="${a.r}" sd="f"${a.i ? ` i="${a.i}"` : ''} d="${a.d}">\n${body.join('\n')}\n</t>`);
+    const OP = p.opAct === undefined ? 1 : p.opAct, TA = p.trigAct === undefined ? 0 : p.trigAct;
+    const gop = (i, o) => `<g i="${i}"><a i="${OP}" p0="${o}" p1="0"/></g>`, tact = (i) => `<t i="${i}"><a i="${TA}"/></t>`;
+    const left = cx - WW / 2, zw = WW / N;
+    if (p.mode === 'control') {
+      for (let k = 0; k < N; k++) {
+        const body = []; for (let j = 0; j < N; j++) body.push(gop(j, j === k ? 100 : 0));
+        T({ x: left + zw * (k + 0.5), y: floor - 150, w: Math.max(5, Math.ceil(zw)), h: 300, b: p.bPlayer, r: p.rZone, i: 0, d: 0 }, body);
+      }
+    } else {
+      // 0: arranque (jugador) | 1..N: cadena de retrasos | N+1..2N: temporizadores
+      T({ x: cx, y: floor - 150, w: WW, h: 300, b: p.bPlayer, r: 1, i: 0, d: 0 }, [tact(1)]);
+      for (let k = 0; k < N; k++) {
+        const body = [tact(N + 1 + k)]; if (k < N - 1) body.push(tact(2 + k));
+        T({ x: 150 + k * 3, y: 200, w: 40, h: 40, b: p.bTimer, r: 1, i: 0, d: k === 0 ? 0 : p.dt }, body);
+      }
+      for (let k = 0; k < N; k++)
+        T({ x: 150 + k * 3, y: 300, w: 40, h: 40, b: p.bTimer, r: 4, i: +(N * p.dt).toFixed(3), d: 0 }, [gop(k, 100), gop((k - 1 + N) % N, 0)]);
+    }
+
+    const startX = p.mode === 'control' ? left + 40 : cx - 150;
+    const xml = `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${r1(startX)}" y="${r1(floor - 60)}" c="${p.vehicle}" f="t" h="f" bg="0" bgc="1710618" e="1"/>\n` +
+      `    <shapes>\n        ${shapes.join('\n        ')}\n    </shapes>\n    <specials>\n        ${specials.join('\n        ')}\n    </specials>\n` +
+      `    <groups>\n${groups.join('\n')}\n    </groups>\n    <triggers>\n${trig.join('\n')}\n    </triggers>\n</levelXML>\n`;
+    return { xml, rf, scale, art, facesPerFrame: Math.round(faces / N), maxFaces: Math.max(...rf.frames.map((f) => f.polys.length)), triggers: trig.length, groups: N, cy: my };
+  }
+
+  return { MODELS, parseOBJ, renderFrames, build };
+})();
+if (typeof module !== 'undefined') module.exports = HW3D;
+
+</script>
+<script>
+const $=id=>document.getElementById(id);
+let objModel=null,last=null,timer=null,anim=null;
+const num=id=>+$(id).value, hexRGB=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+function labels(){[['frames','vN'],['detail','vD'],['size','vS'],['pitch','vP'],['persp','vQ'],['dt','vT']].forEach(([a,b])=>$(b).textContent=$(a).value);
+  $('autoOpts').style.display=$('mode').value==='auto'?'block':'none';$('obj').style.display=$('model').value==='obj'?'block':'none'}
+function run(){
+  labels();
+  let model;
+  try{model=$('model').value==='obj'?objModel:HW3D.MODELS[$('model').value](num('detail'));}catch(e){model=null}
+  if(!model){$('stats').innerHTML='<span class="warn">Choose an .obj file.</span>';return}
+  const p={frames:num('frames'),pitch:num('pitch'),yaw0:num('yaw0'),persp:num('persp')>0?num('persp')+1.5:0,color:hexRGB($('color').value),
+    spec:$('spec').checked,flip:$('flip').checked,twoSided:$('two').checked,outline:$('outline').checked,size:num('size'),cx:num('cx'),floor:num('floor'),
+    height:Math.round(num('size')*0.6),arenaW:num('arena'),foreground:$('fore').checked,mode:$('mode').value,vehicle:num('veh'),
+    opAct:num('opa'),trigAct:num('tra'),bPlayer:num('bp'),bTimer:num('bt'),rZone:num('rz'),dt:num('dt'),backColor:parseInt($('back').value.slice(1),16)};
+  const r=HW3D.build(model,p);last={r,p,model};
+  $('fr').max=p.frames-1;if(+$('fr').value>p.frames-1)$('fr').value=0;
+  const kb=Math.round(r.xml.length/1024),over=r.art>10000;
+  $('stats').innerHTML=`<b>${p.frames}</b> frames · <b>${r.facesPerFrame}</b> faces per frame · total art <b>${r.art}</b> / 10000 · <b>${r.triggers}</b> triggers · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
+   (over?'<br><span class="warn">Over the art limit: lower the frames or the detail.</span>':'')+
+   (kb>900?'<br><span class="warn">Very large file: if the game freezes on import, lower the frames or the detail.</span>':'')+
+   (p.mode==='control'?`<br>Each floor zone is ${(p.arenaW/p.frames).toFixed(1)} px wide.`:'');
+  draw();
+}
+function draw(){
+  if(!last)return;const {r,p}=last,k=+$('fr').value,cv=$('cv'),W=cv.width,H=cv.height,g=cv.getContext('2d');
+  g.fillStyle='#'+('000000'+p.backColor.toString(16)).slice(-6);g.fillRect(0,0,W,H);
+  const s=Math.min(W,H)/2/(r.rf.extent||1)*0.9;
+  for(const q of r.rf.frames[k].polys){g.fillStyle=g.strokeStyle=`rgb(${q.color})`;g.beginPath();
+    q.pts.forEach((t,i)=>i?g.lineTo(W/2+t[0]*s,H/2+t[1]*s):g.moveTo(W/2+t[0]*s,H/2+t[1]*s));g.closePath();g.fill();if(p.outline)g.stroke()}
+  $('frl').textContent=(k+1)+' / '+p.frames;
+}
+function debounce(){clearTimeout(timer);labels();timer=setTimeout(run,200)}
+['model','mode','frames','detail','size','pitch','persp','color','back','spec','outline','fore','arena','veh','dt','bp','bt','rz','yaw0','opa','tra','cx','floor','two','flip'].forEach(i=>$(i).addEventListener('input',debounce));
+$('fr').addEventListener('input',draw);
+$('play').onclick=()=>{if(anim){clearInterval(anim);anim=null;$('play').textContent='▶ Spin';return}
+  $('play').textContent='❚❚ Pause';anim=setInterval(()=>{const n=last?last.p.frames:1;$('fr').value=(+$('fr').value+1)%n;draw()},90)};
+$('obj').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{objModel=HW3D.parseOBJ(rd.result);run()}catch(err){objModel=null;$('stats').innerHTML='<span class="warn">'+err.message+'</span>'}};rd.readAsText(f)};
+$('copy').onclick=async()=>{if(!last)return;const x=last.r.xml;
+  try{await navigator.clipboard.writeText(x)}catch(_){const t=document.createElement('textarea');t.value=x;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
+  $('copy').textContent='Copied!';setTimeout(()=>$('copy').textContent='Copy level data',1500)};
+$('dl').onclick=()=>{if(!last)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([last.r.xml],{type:'text/plain'}));a.download='model3d_levelxml.txt';a.click()};
+run();
+</script></body></html>
