@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image to Happy Wheels</title>
+<style>
+:root{--bg:#14111f;--pn:#1e1a2e;--tx:#ece8f5;--mu:#9a93b0;--ac:#ffc424;--bd:#34304a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;display:flex;min-height:100vh}
+aside{width:330px;padding:18px;background:var(--pn);border-right:1px solid var(--bd);overflow:auto;max-height:100vh;position:sticky;top:0}
+main{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h1{font-size:18px;margin:0 0 6px;color:var(--ac)}
+.ai{margin:8px 0 14px;padding:7px 9px;border:1px solid #ff4d8d;border-radius:6px;background:#ff4d8d1a;color:#ff5c9a;font-size:12px;font-weight:700;line-height:1.4}
+select{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px}
+#drop{border:2px dashed var(--bd);border-radius:10px;padding:14px;text-align:center;color:var(--mu);cursor:pointer}
+#drop.on{border-color:var(--ac);color:var(--tx)}
+#list{display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:170px;overflow:auto}
+#list div{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:6px;padding:3px 6px;font-size:12px}
+#list img{width:34px;height:24px;object-fit:cover;border-radius:3px}
+#list span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#list a{cursor:pointer;color:var(--mu);padding:0 4px}#list a:hover{color:#ff8a8a}
+label{display:block;margin-top:12px;font-size:13px;color:var(--mu)}label b{color:var(--tx);float:right}
+input[type=range]{width:100%;accent-color:var(--ac)}
+input[type=number]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:5px}
+textarea{width:100%;height:70px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px;font:11px monospace;resize:vertical}
+.row{display:flex;gap:8px}.row>div{flex:1}
+button{background:var(--ac);color:#1b1500;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
+button.s{background:var(--bd);color:var(--tx)}
+#stats{font-size:13px;color:var(--mu);line-height:1.5}#stats b{color:var(--tx)}
+.warn{color:#ff8a8a}
+#stage{flex:1;display:flex;align-items:center;justify-content:center;background:#0c0a14;border:1px solid var(--bd);border-radius:10px;min-height:300px;overflow:auto}
+canvas{max-width:100%;max-height:100%}
+small{color:var(--mu)}
+@media(max-width:760px){body{flex-direction:column}aside{width:auto;max-height:none;position:static}}
+</style></head><body>
+<aside>
+<h1>Image → Happy Wheels</h1>
+<small>Turns pictures into art shapes. Default method: one art shape per color.</small>
+<div class="ai">⚠ This program was made by an AI for experimental purposes. Expect bugs of all kinds.</div>
+<div id="drop">Drop one or more images<br>or click to choose</div>
+<input id="file" type="file" accept="image/*" multiple hidden>
+<div id="list"></div>
+<button id="clear" class="s" style="margin-top:6px;padding:6px;display:none">Remove all</button>
+<label>Current level (optional) <b id="lvS"></b></label>
+<textarea id="lvl" placeholder="Paste your level data here and the images are added as groups"></textarea>
+<label>Method</label>
+<select id="method"><option value="mono">One art shape per color (few shapes, many points)</option><option value="classic">Classic (many small shapes, few points each)</option></select>
+<div id="monoOpts"><label>Quality preset</label>
+<select id="preset"><option value="">Custom</option><option value="low">Low (~72p, 12 colors, 4k pts)</option><option value="med" selected>Medium (~108p, 16 colors, 8k pts)</option><option value="high">High (~144p, 24 colors, 20k pts)</option><option value="ultra">Ultra (~216p, 40 colors, 50k pts)</option><option value="max">Max (~288p, 64 colors, 100k pts)</option></select></div>
+<label>Colors <b id="vC"></b></label><input id="colors" type="range" min="2" max="64" value="16">
+<div id="monoOpts2"><label>Point budget per image <b id="vP"></b></label><input id="budget" type="range" min="500" max="100000" step="500" value="8000">
+<small>More points = more detail, but may slow the game. Art used = colors per image.</small>
+<label>Edge smoothing <b id="vS"></b></label><input id="smooth" type="range" min="0" max="4" step="1" value="2"></div>
+<div id="clsOpts" style="display:none"><label>Art shapes per image (approx.) <b id="vT"></b></label><input id="target" type="range" min="20" max="1500" value="250"></div>
+<label>Noise smoothing <b id="vB"></b></label><input id="blur" type="range" min="0" max="8" step="1" value="3">
+<label>Analysis resolution (longest side) <b id="vR"></b></label><input id="res" type="range" min="64" max="640" step="8" value="192">
+<label>Size of each image (max width × height)</label>
+<div class="row"><div><input id="vw" type="number" value="640"></div><div><input id="vh" type="number" value="360"></div></div>
+<small>The camera shows about 640×360.</small>
+<label>Gap between images / images per row (0 = auto)</label>
+<div class="row"><div><input id="gap" type="number" value="40"></div><div><input id="perRow" type="number" value="0" min="0"></div></div>
+<label>Position of the first image (x, y)</label>
+<div class="row"><div><input id="px" type="number" value="300"></div><div><input id="py" type="number" value="4800"></div></div>
+<label>Max points per shape <b id="vM"></b></label><input id="maxPts" type="range" min="20" max="100" value="100">
+<small>100 is the game limit without mods (classic method only).</small>
+<button id="copy">Copy level data</button>
+<button id="dl" class="s">Download .txt</button>
+</aside>
+<main><div id="stats">Load one or more images to start.</div><div id="stage"><canvas id="cv" width="640" height="360"></canvas></div></main>
+<script>
+/* HWCore: imagen -> level data de Happy Wheels (formas de arte sh t="4").
+   Presupuesto = cantidad de formas de arte (el contador del juego cuenta 1 por forma). */
+const HWCore = (function () {
+  'use strict';
+
+  function rng(seed) {
+    let a = seed | 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- suavizado que respeta bordes ----------
+  function bilateral(src, w, h, blur) {
+    if (blur <= 0) return src;
+    const r = Math.min(4, Math.max(1, Math.round(blur)));
+    const sc2 = 2 * Math.pow(blur * 12, 2), ss2 = 2 * r * r * 0.5;
+    const out = new Uint8ClampedArray(src.length);
+    const wsp = new Float32Array((2 * r + 1) * (2 * r + 1));
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+      wsp[(dy + r) * (2 * r + 1) + dx + r] = Math.exp(-(dx * dx + dy * dy) / ss2);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4, R = src[i], G = src[i + 1], B = src[i + 2];
+      let sr = 0, sg = 0, sb = 0, sw = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        const yy = y + dy; if (yy < 0 || yy >= h) continue;
+        for (let dx = -r; dx <= r; dx++) {
+          const xx = x + dx; if (xx < 0 || xx >= w) continue;
+          const j = (yy * w + xx) * 4;
+          const dr = src[j] - R, dg = src[j + 1] - G, db = src[j + 2] - B;
+          const k = wsp[(dy + r) * (2 * r + 1) + dx + r] * Math.exp(-(dr * dr + dg * dg + db * db) / sc2);
+          sr += src[j] * k; sg += src[j + 1] * k; sb += src[j + 2] * k; sw += k;
+        }
+      }
+      out[i] = sr / sw; out[i + 1] = sg / sw; out[i + 2] = sb / sw; out[i + 3] = 255;
+    }
+    return out;
+  }
+
+  // ---------- k-means ----------
+  function quantize(rgba, w, h, K, blur, seed) {
+    const src = bilateral(rgba, w, h, blur);
+    const n = w * h, rand = rng(seed || 1);
+    const step = Math.max(1, Math.floor(n / 30000));
+    const S = []; for (let p = 0; p < n; p += step) S.push(p);
+    const m = S.length;
+    const cen = new Float64Array(K * 3);
+    const d2 = new Float64Array(m).fill(Infinity);
+    let first = S[Math.floor(rand() * m)];
+    for (let k = 0; k < K; k++) {
+      let pick = first;
+      if (k > 0) {
+        let tot = 0; for (let s = 0; s < m; s++) tot += d2[s];
+        let r = rand() * tot, s = 0;
+        for (; s < m - 1; s++) { r -= d2[s]; if (r <= 0) break; }
+        pick = S[s];
+      }
+      for (let c = 0; c < 3; c++) cen[k * 3 + c] = src[pick * 4 + c];
+      for (let s = 0; s < m; s++) {
+        const p = S[s] * 4, a = src[p] - cen[k * 3], b = src[p + 1] - cen[k * 3 + 1], c = src[p + 2] - cen[k * 3 + 2];
+        const d = a * a + b * b + c * c; if (d < d2[s]) d2[s] = d;
+      }
+    }
+    const assign = (p) => {
+      let best = 0, bd = Infinity;
+      for (let k = 0; k < K; k++) {
+        const a = src[p * 4] - cen[k * 3], b = src[p * 4 + 1] - cen[k * 3 + 1], c = src[p * 4 + 2] - cen[k * 3 + 2];
+        const d = a * a + b * b + c * c; if (d < bd) { bd = d; best = k; }
+      }
+      return best;
+    };
+    for (let it = 0; it < 14; it++) {
+      const sum = new Float64Array(K * 3), cnt = new Float64Array(K);
+      for (let s = 0; s < m; s++) {
+        const p = S[s], k = assign(p);
+        sum[k * 3] += src[p * 4]; sum[k * 3 + 1] += src[p * 4 + 1]; sum[k * 3 + 2] += src[p * 4 + 2]; cnt[k]++;
+      }
+      for (let k = 0; k < K; k++) if (cnt[k] > 0) for (let c = 0; c < 3; c++) cen[k * 3 + c] = sum[k * 3 + c] / cnt[k];
+    }
+    const lab = new Uint8Array(n), cnt = new Float64Array(K);
+    for (let p = 0; p < n; p++) { lab[p] = assign(p); cnt[lab[p]]++; }
+    const order = Array.from({ length: K }, (_, i) => i).sort((a, b) => cnt[b] - cnt[a]);
+    const remap = new Uint8Array(K); order.forEach((o, i) => (remap[o] = i));
+    for (let p = 0; p < n; p++) lab[p] = remap[lab[p]];
+    const pal = order.map((o) => [0, 1, 2].map((c) => Math.max(0, Math.min(255, Math.round(cen[o * 3 + c])))));
+    return { labels: lab, pal };
+  }
+
+  // ---------- componentes conexas (4-conectividad) ----------
+  function components(labels, w, h) {
+    const n = w * h, id = new Int32Array(n).fill(-1), st = new Int32Array(n);
+    const C = { id, lab: [], area: [], x0: [], y0: [], x1: [], y1: [] };
+    let cnt = 0;
+    for (let s = 0; s < n; s++) {
+      if (id[s] >= 0) continue;
+      const L = labels[s]; let sp = 0; st[sp++] = s; id[s] = cnt;
+      let a = 0, mnx = w, mny = h, mxx = -1, mxy = -1;
+      while (sp) {
+        const p = st[--sp]; a++;
+        const x = p % w, y = (p / w) | 0;
+        if (x < mnx) mnx = x; if (x > mxx) mxx = x; if (y < mny) mny = y; if (y > mxy) mxy = y;
+        if (x > 0 && id[p - 1] < 0 && labels[p - 1] === L) { id[p - 1] = cnt; st[sp++] = p - 1; }
+        if (x < w - 1 && id[p + 1] < 0 && labels[p + 1] === L) { id[p + 1] = cnt; st[sp++] = p + 1; }
+        if (y > 0 && id[p - w] < 0 && labels[p - w] === L) { id[p - w] = cnt; st[sp++] = p - w; }
+        if (y < h - 1 && id[p + w] < 0 && labels[p + w] === L) { id[p + w] = cnt; st[sp++] = p + w; }
+      }
+      C.lab.push(L); C.area.push(a); C.x0.push(mnx); C.y0.push(mny); C.x1.push(mxx); C.y1.push(mxy);
+      cnt++;
+    }
+    C.cnt = cnt;
+    return C;
+  }
+
+  // reasigna componentes chicas al color vecino mas cercano
+  function cleanSmall(labels, w, h, minA) {
+    const n = w * h, C = components(labels, w, h);
+    const small = new Uint8Array(n); let any = 0, all = 1;
+    for (let p = 0; p < n; p++) { small[p] = C.area[C.id[p]] < minA ? 1 : 0; if (small[p]) any = 1; else all = 0; }
+    if (!any || all) return labels;
+    const out = labels.slice(), vis = new Uint8Array(n), q = new Int32Array(n);
+    let qh = 0, qt = 0;
+    for (let p = 0; p < n; p++) if (!small[p]) { vis[p] = 1; q[qt++] = p; }
+    while (qh < qt) {
+      const p = q[qh++], x = p % w, y = (p / w) | 0, L = out[p];
+      const nb = [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1];
+      for (const t of nb) if (t >= 0 && !vis[t]) { vis[t] = 1; out[t] = L; q[qt++] = t; }
+    }
+    return out;
+  }
+
+  // ---------- contorno exterior (huecos rellenos) de una componente dilatada 1px ----------
+  const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
+  function contour(C, i, w, h) {
+    const bx0 = C.x0[i] - 2, by0 = C.y0[i] - 2;
+    const bw = C.x1[i] - C.x0[i] + 5, bh = C.y1[i] - C.y0[i] + 5;
+    const m = new Uint8Array(bw * bh), d = new Uint8Array(bw * bh);
+    for (let y = C.y0[i]; y <= C.y1[i]; y++) for (let x = C.x0[i]; x <= C.x1[i]; x++)
+      if (C.id[y * w + x] === i) m[(y - by0) * bw + (x - bx0)] = 1;
+    for (let y = 1; y < bh - 1; y++) for (let x = 1; x < bw - 1; x++) {
+      const gx = bx0 + x, gy = by0 + y;
+      if (gx < 0 || gx >= w || gy < 0 || gy >= h) continue; // no salir de la imagen
+      const o = y * bw + x;
+      if (m[o] || m[o - 1] || m[o + 1] || m[o - bw] || m[o + bw] || m[o - bw - 1] || m[o - bw + 1] || m[o + bw - 1] || m[o + bw + 1]) d[o] = 1;
+    }
+    const W1 = bw + 1, head = new Int32Array(W1 * (bh + 1)).fill(-1);
+    const ex = [], ey = [], ed = [], nx = [];
+    const add = (vx, vy, dir) => { const k = vy * W1 + vx; ex.push(vx); ey.push(vy); ed.push(dir); nx.push(head[k]); head[k] = ex.length - 1; };
+    for (let y = 1; y < bh - 1; y++) for (let x = 1; x < bw - 1; x++) {
+      const o = y * bw + x; if (!d[o]) continue;
+      if (!d[o - bw]) add(x, y, 0);
+      if (!d[o + 1]) add(x + 1, y, 1);
+      if (!d[o + bw]) add(x + 1, y + 1, 2);
+      if (!d[o - 1]) add(x, y + 1, 3);
+    }
+    const used = new Uint8Array(ex.length);
+    let best = null, bestA = 0;
+    for (let s = 0; s < ex.length; s++) {
+      if (used[s]) continue;
+      const pts = []; let e = s, pd = -1, guard = 0;
+      while (e >= 0 && !used[e] && guard++ < 5e6) {
+        used[e] = 1;
+        if (ed[e] !== pd) pts.push([bx0 + ex[e], by0 + ey[e]]);
+        pd = ed[e];
+        const vx = ex[e] + DX[pd], vy = ey[e] + DY[pd];
+        let nxt = -1, bestRank = 9;
+        for (let c = head[vy * W1 + vx]; c >= 0; c = nx[c]) {
+          if (used[c]) continue;
+          const rank = ed[c] === (pd + 3) % 4 ? 0 : ed[c] === pd ? 1 : 2; // preferir giro a la izquierda
+          if (rank < bestRank) { bestRank = rank; nxt = c; }
+        }
+        e = nxt;
+      }
+      let a = 0;
+      for (let k = 0; k < pts.length; k++) { const p = pts[k], q = pts[(k + 1) % pts.length]; a += p[0] * q[1] - q[0] * p[1]; }
+      a = Math.abs(a) / 2;
+      if (a > bestA) { bestA = a; best = pts; }
+    }
+    return best ? { pts: best, area: bestA } : null;
+  }
+
+  // ---------- Douglas-Peucker cerrado ----------
+  function dpOpen(Q, eps) {
+    const m = Q.length, keep = new Uint8Array(m); keep[0] = keep[m - 1] = 1;
+    const st = [[0, m - 1]];
+    while (st.length) {
+      const [lo, hi] = st.pop(); if (hi - lo < 2) continue;
+      const ax = Q[lo][0], ay = Q[lo][1], bx = Q[hi][0], by = Q[hi][1];
+      const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+      let md = -1, mi = -1;
+      for (let k = lo + 1; k < hi; k++) {
+        const d = L === 0 ? Math.hypot(Q[k][0] - ax, Q[k][1] - ay) : Math.abs(dx * (ay - Q[k][1]) - (ax - Q[k][0]) * dy) / L;
+        if (d > md) { md = d; mi = k; }
+      }
+      if (md > eps) { keep[mi] = 1; st.push([lo, mi], [mi, hi]); }
+    }
+    const out = []; for (let k = 0; k < m; k++) if (keep[k]) out.push(Q[k]);
+    return out;
+  }
+  function simplifyClosed(P, eps, maxPts) {
+    let e = eps;
+    for (let tries = 0; tries < 40; tries++) {
+      let b = 0, bd = -1;
+      for (let k = 1; k < P.length; k++) { const d = Math.hypot(P[k][0] - P[0][0], P[k][1] - P[0][1]); if (d > bd) { bd = d; b = k; } }
+      if (b === 0) return P.slice(0, 3);
+      const c1 = dpOpen(P.slice(0, b + 1), e), c2 = dpOpen(P.slice(b).concat([P[0]]), e);
+      const out = c1.concat(c2.slice(1, -1));
+      if (out.length <= maxPts) return out;
+      e *= 1.3;
+    }
+    return P.slice(0, maxPts);
+  }
+
+  // ---------- construccion ----------
+  function pointInPoly(x, y, P) {
+    let ins = false;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      const xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) ins = !ins;
+    }
+    return ins;
+  }
+
+  function build(labels, w, h, eps, maxPts) {
+    const C = components(labels, w, h), polys = [];
+    for (let i = 0; i < C.cnt; i++) {
+      const c = contour(C, i, w, h); if (!c) continue;
+      const pts = simplifyClosed(c.pts, eps, maxPts);
+      if (pts.length < 3) continue;
+      polys.push({ c: C.lab[i], comp: i, pts, area: c.area });
+    }
+    polys.sort((a, b) => b.area - a.area);
+    // componentes del color base que ya cubre el rectangulo de fondo
+    const interior = new Int32Array(C.cnt).fill(-1);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x, k = C.id[p];
+      if (C.lab[k] !== 0 || interior[k] >= 0) continue;
+      if (C.id[p - 1] === k && C.id[p + 1] === k && C.id[p - w] === k && C.id[p + w] === k &&
+          C.id[p - w - 1] === k && C.id[p - w + 1] === k && C.id[p + w - 1] === k && C.id[p + w + 1] === k) interior[k] = p;
+    }
+    const others = polys.filter((p) => p.c !== 0);
+    const bb = others.map((p) => { let a = 1e9, b = 1e9, c = -1, d = -1; for (const q of p.pts) { if (q[0] < a) a = q[0]; if (q[0] > c) c = q[0]; if (q[1] < b) b = q[1]; if (q[1] > d) d = q[1]; } return [a, b, c, d]; });
+    return polys.filter((p) => {
+      if (p.c !== 0) return true;
+      const ip = interior[p.comp]; if (ip < 0) return true;
+      const px = (ip % w) + 0.5, py = ((ip / w) | 0) + 0.5;
+      for (let k = 0; k < others.length; k++) {
+        const b = bb[k]; if (px < b[0] || px > b[2] || py < b[1] || py > b[3]) continue;
+        if (pointInPoly(px, py, others[k].pts)) return true;
+      }
+      return false;
+    });
+  }
+
+  // biseccion del detalle para quedar <= target formas de arte
+  function fit(labels0, w, h, target, maxPts) {
+    const run = (t) => build(cleanSmall(labels0, w, h, 3 + (1 - t) * 100), w, h, 0.6 + (1 - t) * 1.2, maxPts);
+    let best = run(0), bt = 0;
+    if (best.length + 1 > target) return { polys: best, t: 0, ok: false };
+    let lo = 0, hi = 1;
+    const top = run(1);
+    if (top.length + 1 <= target) return { polys: top, t: 1, ok: true };
+    for (let k = 0; k < 8; k++) {
+      const mid = (lo + hi) / 2, r = run(mid);
+      if (r.length + 1 <= target) { best = r; bt = mid; lo = mid; } else hi = mid;
+    }
+    return { polys: best, t: bt, ok: true };
+  }
+
+  // ---------- salida XML ----------
+  const pack = (c) => (c[0] << 16) | (c[1] << 8) | c[2];
+  const r1 = (v) => Math.round(v * 10) / 10;
+  function artXml(P, color, id, ox, oy) {
+    let mnx = 1e12, mny = 1e12, mxx = -1e12, mxy = -1e12;
+    const Q = P.map((p) => [r1(p[0]), r1(p[1])]);
+    for (const q of Q) { mnx = Math.min(mnx, q[0]); mxx = Math.max(mxx, q[0]); mny = Math.min(mny, q[1]); mxy = Math.max(mxy, q[1]); }
+    const cx = (mnx + mxx) / 2, cy = (mny + mxy) / 2;
+    const vs = Q.map((q, i) => `v${i}="${r1(q[0] - cx)}_${r1(q[1] - cy)}"`).join(' ');
+    return `<sh t="4" i="f" p0="${r1(ox + cx)}" p1="${r1(oy + cy)}" p2="${Math.max(2, Math.round(mxx - mnx))}" p3="${Math.max(2, Math.round(mxy - mny))}" p4="0" p5="f" p6="f" p7="1" p8="${color}" p9="-1" p10="100" p11="1"><v f="t" id="${id}" n="${Q.length}" ${vs}/></sh>`;
+  }
+
+  /* rgba: imagen YA reducida a w x h. o: {colors,target,blur,maxPts,viewW,viewH,x,y,idBase} */
+  function convert(rgba, w, h, o) {
+    const { labels, pal } = quantize(rgba, w, h, o.colors, o.blur, 1);
+    const { polys, t, ok } = fit(labels, w, h, o.target, o.maxPts);
+    const unit = Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0;
+    const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);
+    const fw = w * unit, fh = h * unit;
+    // si hay celda (cellW/cellH) la imagen se centra dentro de ella
+    const X = o.x + (o.cellW ? (o.cellW - fw) / 2 : 0), Y = o.y + (o.cellH ? (o.cellH - fh) / 2 : 0);
+    const shapes = [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)];
+    polys.forEach((p, i) => shapes.push(artXml(S(p.pts), pack(pal[p.c]), base + i + 1, X, Y)));
+    const gx = r1(X + fw / 2), gy = r1(Y + fh / 2);
+    const group = `<g x="${gx}" y="${gy}" r="0" ox="${-gx}" oy="${-gy}" s="f" f="f" o="100" im="f" fr="f">\n${shapes.join('\n')}\n</g>`;
+    const xml = `<levelXML>\n<info v="2.01" rv="1.99.2" x="${Math.max(50, Math.round(o.x - 150))}" y="${Math.round(o.y + fh + 100)}" c="1" f="f" h="f" bg="0" bgc="16777215" e="1"/>\n<groups>\n${group}\n</groups>\n</levelXML>\n`;
+    return { xml, group, X, Y, polys, pal, w, h, t, ok, count: shapes.length, points: polys.reduce((a, p) => a + p.pts.length, 4), fw: Math.round(fw), fh: Math.round(fh), unit };
+  }
+
+  // ======================================================================
+  // METHOD B: ONE ART SHAPE PER COLOR.
+  // Every region of the same color (islands and holes included) becomes ONE polygon.
+  // Separate loops are joined with zero-width bridges (the same edge walked out and back),
+  // so the bridge has no area and cannot be seen. Art counter cost = number of colors.
+  // ======================================================================
+  function rgb2lab(r, g, b) {
+    const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const R = f(r), G = f(g), B = f(b);
+    const X = (R * 0.4124564 + G * 0.3575761 + B * 0.1804375) / 0.95047, Y = R * 0.2126729 + G * 0.7151522 + B * 0.072175, Z = (B * 0.9503041 + G * 0.119192 + R * 0.0193339) / 1.08883;
+    const t = (v) => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116), fx = t(X), fy = t(Y), fz = t(Z);
+    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+  }
+  // k-means in Lab (perceptual). Returns labels sorted by frequency (0 = most common) and RGB palette.
+  function quantizeLab(rgba, w, h, K, blur, seed) {
+    const src = bilateral(rgba, w, h, blur), n = w * h, rand = rng(seed || 1);
+    const lab = new Float32Array(n * 3);
+    for (let p = 0; p < n; p++) { const L = rgb2lab(src[p * 4], src[p * 4 + 1], src[p * 4 + 2]); lab[p * 3] = L[0]; lab[p * 3 + 1] = L[1]; lab[p * 3 + 2] = L[2]; }
+    const step = Math.max(1, Math.floor(n / 30000)), S = []; for (let p = 0; p < n; p += step) S.push(p);
+    const m = S.length; K = Math.max(1, Math.min(K, m));
+    const cen = new Float64Array(K * 3), d2 = new Float64Array(m).fill(Infinity);
+    for (let k = 0; k < K; k++) {
+      let pick = S[Math.floor(rand() * m)];
+      if (k > 0) { let tot = 0; for (let s = 0; s < m; s++) tot += d2[s]; if (tot > 0) { let r = rand() * tot, s = 0; for (; s < m - 1; s++) { r -= d2[s]; if (r <= 0) break; } pick = S[s]; } }
+      for (let c = 0; c < 3; c++) cen[k * 3 + c] = lab[pick * 3 + c];
+      for (let s = 0; s < m; s++) { const p = S[s] * 3, a = lab[p] - cen[k * 3], b = lab[p + 1] - cen[k * 3 + 1], c = lab[p + 2] - cen[k * 3 + 2], d = a * a + b * b + c * c; if (d < d2[s]) d2[s] = d; }
+    }
+    const assign = (p) => { let best = 0, bd = Infinity; for (let k = 0; k < K; k++) { const a = lab[p * 3] - cen[k * 3], b = lab[p * 3 + 1] - cen[k * 3 + 1], c = lab[p * 3 + 2] - cen[k * 3 + 2], d = a * a + b * b + c * c; if (d < bd) { bd = d; best = k; } } return best; };
+    for (let it = 0; it < 12; it++) {
+      const sum = new Float64Array(K * 3), cnt = new Float64Array(K);
+      for (let s = 0; s < m; s++) { const p = S[s], k = assign(p); sum[k * 3] += lab[p * 3]; sum[k * 3 + 1] += lab[p * 3 + 1]; sum[k * 3 + 2] += lab[p * 3 + 2]; cnt[k]++; }
+      for (let k = 0; k < K; k++) if (cnt[k] > 0) for (let c = 0; c < 3; c++) cen[k * 3 + c] = sum[k * 3 + c] / cnt[k];
+    }
+    const lb = new Uint8Array(n), cnt = new Float64Array(K), rs = new Float64Array(K * 3);
+    for (let p = 0; p < n; p++) { const k = assign(p); lb[p] = k; cnt[k]++; rs[k * 3] += src[p * 4]; rs[k * 3 + 1] += src[p * 4 + 1]; rs[k * 3 + 2] += src[p * 4 + 2]; }
+    const order = Array.from({ length: K }, (_, i) => i).filter((i) => cnt[i] > 0).sort((a, b) => cnt[b] - cnt[a]);
+    const remap = new Int16Array(K).fill(-1); order.forEach((o, i) => (remap[o] = i));
+    for (let p = 0; p < n; p++) lb[p] = remap[lb[p]];
+    return { labels: lb, pal: order.map((o) => [0, 1, 2].map((c) => clamp255(rs[o * 3 + c] / cnt[o]))) };
+  }
+  const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
+
+  function dilate(mask, w, h) { // 3x3 binary dilation
+    const t = new Uint8Array(w * h), o = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const p = y * w + x; t[p] = mask[p] | (x > 0 ? mask[p - 1] : 0) | (x < w - 1 ? mask[p + 1] : 0); }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const p = y * w + x; o[p] = t[p] | (y > 0 ? t[p - w] : 0) | (y < h - 1 ? t[p + w] : 0); }
+    return o;
+  }
+  // all boundary loops of a mask (outer loops and hole loops), every lattice vertex kept
+  function traceLoops(mask, w, h) {
+    const W1 = w + 1, head = new Int32Array(W1 * (h + 1)).fill(-1), ex = [], ey = [], ed = [], nx = [];
+    const add = (vx, vy, d) => { const k = vy * W1 + vx; ex.push(vx); ey.push(vy); ed.push(d); nx.push(head[k]); head[k] = ex.length - 1; };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!mask[y * w + x]) continue;
+      if (y === 0 || !mask[(y - 1) * w + x]) add(x, y, 0);
+      if (x === w - 1 || !mask[y * w + x + 1]) add(x + 1, y, 1);
+      if (y === h - 1 || !mask[(y + 1) * w + x]) add(x + 1, y + 1, 2);
+      if (x === 0 || !mask[y * w + x - 1]) add(x, y + 1, 3);
+    }
+    const used = new Uint8Array(ex.length), loops = [];
+    for (let s = 0; s < ex.length; s++) {
+      if (used[s]) continue;
+      const pts = []; let e = s, guard = 0;
+      while (e >= 0 && !used[e] && guard++ < 1e7) {
+        used[e] = 1; pts.push([ex[e], ey[e]]);
+        const pd = ed[e], vx = ex[e] + DX[pd], vy = ey[e] + DY[pd];
+        let nxt = -1, bestRank = 9;
+        for (let c = head[vy * W1 + vx]; c >= 0; c = nx[c]) {
+          if (used[c]) continue;
+          const rank = ed[c] === (pd + 3) % 4 ? 0 : ed[c] === pd ? 1 : 2; // prefer left turn: diagonal pixels stay separate loops
+          if (rank < bestRank) { bestRank = rank; nxt = c; }
+        }
+        e = nxt;
+      }
+      if (pts.length >= 4) loops.push(pts);
+    }
+    return loops;
+  }
+  function smoothLoop(P, it) {
+    for (let t = 0; t < it; t++) {
+      const n = P.length; if (n < 5) break; const Q = new Array(n);
+      for (let i = 0; i < n; i++) { const a = P[(i + n - 1) % n], b = P[i], c = P[(i + 1) % n]; Q[i] = [(a[0] + 2 * b[0] + c[0]) / 4, (a[1] + 2 * b[1] + c[1]) / 4]; }
+      P = Q;
+    }
+    return P;
+  }
+  const loopArea = (P) => { let a = 0; for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+
+  // join loops into ONE polygon with zero-width bridges (nearest vertex among already joined loops)
+  function joinLoops(loops) {
+    if (loops.length === 1) return loops[0].slice();
+    loops = loops.slice().sort((a, b) => Math.abs(loopArea(b)) - Math.abs(loopArea(a)));
+    let tot = 0; loops.forEach((L) => (tot += L.length));
+    const cell = Math.max(4, Math.sqrt((w_h_guess(loops)) / Math.max(50, tot)) * 3);
+    const grid = new Map(), key = (cx, cy) => cx * 100003 + cy;
+    const put = (li, vi) => { const p = loops[li][vi], k = key(Math.floor(p[0] / cell), Math.floor(p[1] / cell)); let a = grid.get(k); if (!a) grid.set(k, (a = [])); a.push(li, vi); };
+    const attach = loops.map(() => new Map());
+    const addLoop = (li) => { for (let vi = 0; vi < loops[li].length; vi++) put(li, vi); };
+    addLoop(0);
+    for (let li = 1; li < loops.length; li++) {
+      const q = loops[li][0], qx = Math.floor(q[0] / cell), qy = Math.floor(q[1] / cell);
+      let best = Infinity, bl = -1, bv = -1;
+      for (let r = 0; r < 4000; r++) {
+        for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const a = grid.get(key(qx + dx, qy + dy)); if (!a) continue;
+          for (let i = 0; i < a.length; i += 2) { const p = loops[a[i]][a[i + 1]], d = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2; if (d < best) { best = d; bl = a[i]; bv = a[i + 1]; } }
+        }
+        if (bl >= 0 && r * cell > Math.sqrt(best)) break;
+      }
+      let list = attach[bl].get(bv); if (!list) attach[bl].set(bv, (list = []));
+      list.push(li); addLoop(li);
+    }
+    const out = [];
+    const emit = (li, start) => {
+      const L = loops[li], n = L.length;
+      for (let k = 0; k < n; k++) {
+        const idx = (start + k) % n; out.push(L[idx]);
+        const ch = attach[li].get(idx);
+        if (ch) for (const c of ch) { emit(c, 0); out.push(loops[c][0]); out.push(L[idx]); }
+      }
+    };
+    emit(0, 0);
+    return out;
+  }
+  function w_h_guess(loops) { let mx = 0, my = 0; for (const L of loops) for (const p of L) { if (p[0] > mx) mx = p[0]; if (p[1] > my) my = p[1]; } return mx * my; }
+
+  function buildMono(labels, w, h, eps, smooth, K) {
+    const shapes = [];
+    for (let c = 1; c < K; c++) {
+      const mask = new Uint8Array(w * h); let any = 0;
+      for (let p = 0; p < w * h; p++) if (labels[p] === c) { mask[p] = 1; any = 1; }
+      if (!any) continue;
+      const loops = [];
+      for (const L of traceLoops(dilate(mask, w, h), w, h)) {
+        const P = simplifyClosed(smoothLoop(L, smooth), eps, 1e9);
+        if (P.length >= 3 && Math.abs(loopArea(P)) > 0.3) loops.push(P);
+      }
+      if (loops.length) shapes.push({ c, pts: joinLoops(loops), loops: loops.length });
+    }
+    return shapes;
+  }
+  const monoPoints = (shapes) => 4 + shapes.reduce((a, s) => a + s.pts.length, 0);
+
+  // bisection of detail so that total points <= budget
+  function fitMono(labels0, w, h, budget, smooth, K) {
+    const run = (t) => buildMono(cleanSmall(labels0, w, h, 2 + (1 - t) * 60), w, h, 0.4 + (1 - t) * 2.2, smooth, K);
+    let best = run(0), bt = 0;
+    if (monoPoints(best) > budget) return { shapes: best, t: 0, ok: false };
+    const top = run(1);
+    if (monoPoints(top) <= budget) return { shapes: top, t: 1, ok: true };
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2, r = run(mid); if (monoPoints(r) <= budget) { best = r; bt = mid; lo = mid; } else hi = mid; }
+    return { shapes: best, t: bt, ok: true };
+  }
+
+  /* o: {colors,pointBudget,blur,smooth,viewW,viewH,cellW,cellH,x,y,idBase} */
+  function convertMono(rgba, w, h, o) {
+    const { labels, pal } = quantizeLab(rgba, w, h, o.colors, o.blur, 1), K = pal.length;
+    const { shapes, t, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K);
+    const unit = Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0, fw = w * unit, fh = h * unit;
+    const X = o.x + (o.cellW ? (o.cellW - fw) / 2 : 0), Y = o.y + (o.cellH ? (o.cellH - fh) / 2 : 0);
+    const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);   // same array objects -> bridge vertices stay identical
+    const xs = [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)];
+    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + 1, X, Y)));
+    const gx = r1(X + fw / 2), gy = r1(Y + fh / 2);
+    const group = `<g x="${gx}" y="${gy}" r="0" ox="${-gx}" oy="${-gy}" s="f" f="f" o="100" im="f" fr="f">\n${xs.join('\n')}\n</g>`;
+    const polys = [{ c: 0, pts: [[0, 0], [w, 0], [w, h], [0, h]] }].concat(shapes);
+    return { group, X, Y, polys, pal, w, h, t, ok, count: xs.length, points: monoPoints(shapes), fw: Math.round(fw), fh: Math.round(fh), unit, mono: true, colors: K };
+  }
+
+  // ---------- nivel existente ----------
+  function inspect(level) {
+    const ids = [...level.matchAll(/<v\b[^>]*?\bid="(-?\d+)"/g)].map((m) => +m[1]);
+    const info = /<info\b[^>]*>/.exec(level);
+    const num = (k) => { const m = info && new RegExp('\\b' + k + '="(-?[\\d.]+)"').exec(info[0]); return m ? +m[1] : null; };
+    return {
+      valid: /<levelXML[\s>]/.test(level) && /<\/levelXML>/.test(level),
+      idBase: ids.length ? Math.max(...ids) + 1 : 0,
+      art: (level.match(/<sh\b[^>]*\bi="f"/g) || []).length,
+      shapes: (level.match(/<sh\b/g) || []).length,
+      x: num('x'), y: num('y'),
+    };
+  }
+
+  // inserta los grupos conservando el resto del nivel; respeta el orden real de secciones
+  // (info, shapes, specials, groups, joints, triggers)
+  function merge(level, group) {
+    const ind = group.split('\n').map((l) => '        ' + l).join('\n');
+    if (/<\/groups>/.test(level)) return level.replace(/<\/groups>/, ind + '\n    </groups>');
+    const blk = `    <groups>\n${ind}\n    </groups>\n`;
+    for (const re of [/<\/specials>[ \t]*\n?/, /<specials\s*\/>[ \t]*\n?/, /<\/shapes>[ \t]*\n?/, /<info\b[^>]*\/>[ \t]*\n?/])
+      if (re.test(level)) return level.replace(re, (m) => m.replace(/\n?$/, '\n') + blk);
+    return level.replace(/<levelXML>/, '<levelXML>\n' + blk);
+  }
+
+  // nivel nuevo con uno o varios grupos
+  function wrap(groups, x, y) {
+    return `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${Math.max(50, Math.round(x))}" y="${Math.round(y)}" c="1" f="f" h="f" bg="0" bgc="16777215" e="1"/>\n    <groups>\n${groups.split('\n').map((l) => '        ' + l).join('\n')}\n    </groups>\n</levelXML>\n`;
+  }
+
+  return { convert, convertMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
+})();
+if (typeof module !== 'undefined') module.exports = HWCore;
+
+</script>
+<script>
+const $=id=>document.getElementById(id);
+let items=[],last=null,timer=null,cur=null,runId=0;
+const sliders=[['target','vT'],['colors','vC'],['blur','vB'],['res','vR'],['maxPts','vM'],['budget','vP'],['smooth','vS']];
+const PRESETS={low:[72,12,4000,2,3],med:[108,16,8000,2,3],high:[144,24,20000,1,2],ultra:[216,40,50000,1,1],max:[288,64,100000,1,1]};
+function applyPreset(){const p=PRESETS[$('preset').value];if(!p)return;
+  $('res').value=Math.round(p[0]*16/9/8)*8;$('colors').value=p[1];$('budget').value=p[2];$('smooth').value=p[3];$('blur').value=p[4]}
+const labels=()=>{sliders.forEach(([a,b])=>$(b).textContent=$(a).value);const m=$('method').value==='mono';$('monoOpts').style.display=$('monoOpts2').style.display=m?'block':'none';$('clsOpts').style.display=m?'none':'block'};
+const num=id=>+$(id).value;
+
+function addFiles(files){
+  const fs=[...files].filter(f=>f.type.startsWith('image/'));if(!fs.length)return;
+  let pending=fs.length;
+  fs.forEach(f=>{const im=new Image();
+    im.onload=()=>{items.push({name:f.name||'image',im,url:im.src});if(--pending===0)added()};
+    im.onerror=()=>{if(--pending===0)added()};
+    im.src=URL.createObjectURL(f)});
+}
+function added(){
+  items.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  renderList();run();
+}
+function renderList(){
+  const L=$('list');L.innerHTML='';
+  items.forEach((it,i)=>{const d=document.createElement('div');
+    d.innerHTML=`<img src="${it.url}"><span>${i+1}. ${it.name.replace(/</g,'&lt;')}</span><a title="Remove">✕</a>`;
+    d.querySelector('a').onclick=()=>{items.splice(i,1);renderList();run()};L.appendChild(d)});
+  $('drop').classList.toggle('on',items.length>0);
+  $('drop').innerHTML=items.length?`${items.length} image${items.length>1?'s':''} · drop more to add`:'Drop one or more images<br>or click to choose';
+  $('clear').style.display=items.length?'block':'none';
+}
+function layout(n){
+  const vw=num('vw'),vh=num('vh'),gap=num('gap'),px=num('px'),py=num('py');
+  const pX=vw+gap,pY=vh+gap;
+  let cols=num('perRow')>0?Math.floor(num('perRow')):Math.max(1,Math.floor((19900-px+gap)/pX));
+  cols=Math.max(1,Math.min(cols,n));
+  return{vw,vh,gap,px,py,pX,pY,cols,rows:Math.ceil(n/cols)};
+}
+async function run(){
+  labels();const id=++runId;
+  if(!items.length){last=null;$('stats').textContent='Load one or more images to start.';return}
+  const n=items.length,Lo=layout(n),R=num('res'),t0=performance.now();
+  let idBase=cur?cur.idBase:0;const res=[],groups=[];
+  for(let i=0;i<n;i++){
+    $('stats').textContent=`Processing ${i+1}/${n}…`;
+    await new Promise(r=>setTimeout(r,15));if(id!==runId)return;
+    const src=items[i].im,s=R/Math.max(src.width,src.height);
+    const w=Math.max(8,Math.round(src.width*s)),h=Math.max(8,Math.round(src.height*s));
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const g=c.getContext('2d',{willReadFrequently:true});g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(src,0,0,w,h);
+    const mono=$('method').value==='mono',px_=g.getImageData(0,0,w,h).data;
+    const r=(mono?HWCore.convertMono:HWCore.convert)(px_,w,h,{
+      colors:num('colors'),target:num('target'),blur:num('blur'),maxPts:num('maxPts'),pointBudget:num('budget'),smooth:num('smooth'),
+      viewW:Lo.vw,viewH:Lo.vh,cellW:Lo.vw,cellH:Lo.vh,
+      x:Lo.px+(i%Lo.cols)*Lo.pX,y:Lo.py+Math.floor(i/Lo.cols)*Lo.pY,idBase});
+    idBase+=r.count;res.push(r);groups.push(r.group);
+  }
+  const all=groups.join('\n');
+  const out=cur?HWCore.merge($('lvl').value,all):HWCore.wrap(all,Lo.px-150,Lo.py+Lo.vh+100);
+  last={out,res};draw(res,Lo);
+  const totalCount=res.reduce((a,r)=>a+r.count,0),totalPts=res.reduce((a,r)=>a+r.points,0);
+  const art=(cur?cur.art:0)+totalCount;
+  const wTot=Lo.cols*Lo.pX-Lo.gap,hTot=Lo.rows*Lo.pY-Lo.gap;
+  const bad=Lo.px+wTot>20000||Lo.py+hTot>9900;
+  const kb=out.length/1048576;
+  $('stats').innerHTML=`<b>${n}</b> image${n>1?'s':''} · <b>${totalCount}</b> art shapes total (${Math.round(totalCount/n)} per image) · <b>${totalPts}</b> points · ${Lo.cols}×${Lo.rows} (cols×rows) · ${wTot}×${hTot} in game · ${kb.toFixed(2)} MB · ${((performance.now()-t0)/1000).toFixed(1)} s`+
+    (cur?`<br>Added to the pasted level · total art approx. <b>${art}</b> / 10000`:'')+
+    (art>10000?'<br><span class="warn">Over the 10000 art limit: lower colors or the number of images.</span>':'')+
+    (totalPts>60000?'<br><span class="warn">Many points: the game may lag or freeze on import. Lower the point budget if it does.</span>':'')+
+    (res.some(r=>!r.ok)?'<br><span class="warn">An image misses its target: raise the budget/shapes or lower the colors.</span>':'')+
+    (bad?'<br><span class="warn">Goes outside the stage (20000×10000): shrink the size or gap, or use more rows.</span>':'');
+}
+function draw(res,Lo){
+  const cv=$('cv'),wTot=Lo.cols*Lo.pX-Lo.gap,hTot=Lo.rows*Lo.pY-Lo.gap;
+  const S=Math.min(3,1600/wTot);cv.width=Math.max(1,Math.round(wTot*S));cv.height=Math.max(1,Math.round(hTot*S));
+  const g=cv.getContext('2d'),col=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
+  g.fillStyle='#0c0a14';g.fillRect(0,0,cv.width,cv.height);
+  res.forEach(r=>{
+    const ox=(r.X-Lo.px)*S,oy=(r.Y-Lo.py)*S,k=r.unit*S;
+    if(!r.mono){g.fillStyle=col(r.pal[0]);g.fillRect(ox,oy,r.w*k,r.h*k)}
+    for(const p of r.polys){g.fillStyle=col(r.pal[p.c]);g.beginPath();
+      p.pts.forEach((q,i)=>i?g.lineTo(ox+q[0]*k,oy+q[1]*k):g.moveTo(ox+q[0]*k,oy+q[1]*k));g.closePath();g.fill('nonzero')}
+  });
+}
+function debounce(){clearTimeout(timer);labels();timer=setTimeout(run,400)}
+['method','budget','smooth','target','colors','blur','res','maxPts','vw','vh','px','py','gap','perRow'].forEach(i=>$(i).addEventListener('input',debounce));
+$('drop').onclick=()=>$('file').click();
+$('file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+$('clear').onclick=()=>{items=[];renderList();run()};
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{e.preventDefault();addFiles(e.dataTransfer.files)});
+document.addEventListener('paste',e=>{if(e.target.id==='lvl')return;addFiles(e.clipboardData.files)});
+$('copy').onclick=async()=>{if(!last)return;
+  try{await navigator.clipboard.writeText(last.out)}catch(_){const t=document.createElement('textarea');t.value=last.out;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
+  $('copy').textContent='Copied!';setTimeout(()=>$('copy').textContent='Copy level data',1500)};
+$('dl').onclick=()=>{if(!last)return;const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([last.out],{type:'text/plain'}));a.download='images_levelxml.txt';a.click()};
+function lvlChange(){
+  const v=$('lvl').value.trim();
+  if(!v){cur=null;$('lvS').textContent='';return run()}
+  const i=HWCore.inspect(v);
+  if(!i.valid){cur=null;$('lvS').textContent='not valid';return run()}
+  cur=i;$('lvS').textContent=i.art+' art, '+i.shapes+' shapes';
+  if(i.x!=null&&i.y!=null){$('px').value=Math.max(50,Math.round(i.x-100));$('py').value=Math.max(50,Math.round(i.y-num('vh')-80))}
+  run();
+}
+$('lvl').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(lvlChange,300)});
+$('preset').addEventListener('input',()=>{applyPreset();debounce()});
+['colors','budget','smooth','blur','res'].forEach(i=>$(i).addEventListener('input',()=>{$('preset').value=''}));
+applyPreset();labels();
+</script></body></html>
