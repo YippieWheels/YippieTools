@@ -1,131 +1,137 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil de Herramientas</title>
+    <title>YippieWheels</title>
     
-    <!-- Cargamos Tailwind CSS para los estilos modernos y responsivos -->
+    <!-- Loading Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Cargamos la fuente Inter de Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Loading VT323, a retro pixel font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     
-    <!-- Configuración básica para usar la fuente y personalizar el color -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #111827; /* Fondo oscuro */
+            font-family: 'VT323', monospace;
+            background-color: #1a1a1a;
+            color: #801a1a;
+        }
+        
+        /* Custom scrollbar to keep the retro vibe */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-left: 1px solid #801a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #801a1a;
         }
     </style>
 </head>
-<body class="text-gray-100 min-h-screen pb-12">
+<body class="min-h-screen p-8 max-w-5xl mx-auto text-2xl sm:text-3xl">
 
-    <!-- ==========================================
-         SECCIÓN DE PERFIL (Header)
-         ========================================== -->
-    <header class="bg-gray-800 border-b border-gray-700 py-12 px-4 shadow-md">
-        <div class="max-w-3xl mx-auto flex flex-col items-center text-center">
+    <!-- HEADER SECTION -->
+    <header class="mb-6">
+        <div class="flex items-end gap-4 mb-6">
             
-            <!-- FOTO DE PERFIL: Cambia el enlace "src" por la URL de tu imagen -->
-            <div class="relative w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-500 shadow-lg mb-5">
-                <img src="https://placehold.co/400x400/4f46e5/ffffff?text=Mi+Foto" alt="Foto de perfil" class="w-full h-full object-cover">
-            </div>
-
-            <!-- TU NOMBRE: Cambia el texto de abajo -->
-            <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Tu Nombre o Apodo</h1>
+            <!-- 
+            *** AVATAR PLACEHOLDER ***
+            Replace the div below with your pixelated burning skeleton gif. 
+            Example: <img src="burning_skeleton.gif" alt="avatar" class="w-24 h-24 sm:w-32 sm:h-32 object-cover">
+            -->
+            <div class="w-24 h-24 sm:w-32 sm:h-32 bg-[#801a1a] flex-shrink-0"></div>
             
-            <!-- TU BIO: Cambia este texto por tu descripción -->
-            <p class="text-gray-400 text-lg max-w-lg">
-                ¡Hola! Aquí subo todas las pequeñas herramientas, calculadoras y programas web que voy creando. Todo es gratis y se usa directo desde el navegador.
-            </p>
-
+            <h1 class="text-5xl sm:text-7xl leading-none">YippieWheels</h1>
+        </div>
+        
+        <div class="pl-2">
+            &lt;Description&gt;
         </div>
     </header>
 
-    <!-- ==========================================
-         LISTADO DE HERRAMIENTAS (Grid)
-         ========================================== -->
-    <main class="max-w-6xl mx-auto px-4 mt-12">
+    <!-- SEPARATOR LINE -->
+    <hr class="border-[#801a1a] mb-8">
+
+    <!-- MAIN CONTENT GRID -->
+    <main class="flex flex-col md:flex-row gap-8 sm:gap-12">
         
-        <h2 class="text-2xl font-semibold mb-6 flex items-center text-gray-200">
-            <span class="bg-indigo-500 w-2 h-6 rounded mr-3"></span>
-            Mis Herramientas
-        </h2>
-
-        <!-- Contenedor del Grid: Se adapta a celulares (1 columna) y PCs (3 columnas) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-
-            <!-- INICIO TARJETA HERRAMIENTA 1 -->
-            <article class="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700 hover:border-indigo-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col">
-                <!-- Imagen de la herramienta (opcional) -->
-                <div class="h-40 w-full bg-gray-900 flex items-center justify-center border-b border-gray-700 relative">
-                    <!-- Puedes poner una imagen cambiando la etiqueta a <img> -->
-                    <span class="text-5xl">🛠️</span> 
-                </div>
+        <!-- LEFT SIDE: TOOLS GRID -->
+        <section class="flex-grow">
+            <h2 class="text-4xl mb-6 pl-2">Tools:</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
                 
-                <div class="p-6 flex flex-col flex-grow">
-                    <!-- Título y descripción -->
-                    <h3 class="text-xl font-bold text-white mb-2">Calculadora de XYZ</h3>
-                    <p class="text-gray-400 text-sm mb-6 flex-grow">
-                        Una herramienta sencilla para calcular cosas rápidamente sin complicaciones. Solo pones los datos y listo.
-                    </p>
-                    
-                    <!-- BOTÓN: Cambia href="#" por el nombre de tu archivo, ej: href="calculadora.html" -->
-                    <a href="#" class="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-md">
-                        Abrir Herramienta
+                <!-- TOOL 1 -->
+                <div class="flex flex-col items-start">
+                    <!-- 
+                    *** HOW TO ADD YOUR TOOL IMAGE ***
+                    Replace the src attribute below with your image link or file name.
+                    Example: <img src="my-game-pic.png" alt="Tool 1" class="w-full h-full object-cover">
+                    -->
+                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
+                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
+                    </div>
+                    <!-- 
+                    *** HOW TO LINK YOUR HTML FILES ***
+                    Change the href="#" attribute to the name of your file.
+                    -->
+                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
+                        &lt;Tool Name&gt;
                     </a>
                 </div>
-            </article>
-            <!-- FIN TARJETA HERRAMIENTA 1 -->
 
-
-            <!-- INICIO TARJETA HERRAMIENTA 2 -->
-            <article class="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700 hover:border-indigo-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col">
-                <div class="h-40 w-full bg-gray-900 flex items-center justify-center border-b border-gray-700">
-                    <span class="text-5xl">📝</span>
-                </div>
-                <div class="p-6 flex flex-col flex-grow">
-                    <h3 class="text-xl font-bold text-white mb-2">Generador de Textos</h3>
-                    <p class="text-gray-400 text-sm mb-6 flex-grow">
-                        Genera formatos automáticos para copiar y pegar en otras plataformas o documentos.
-                    </p>
-                    <!-- BOTÓN -->
-                    <a href="#" class="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-md">
-                        Abrir Herramienta
+                <!-- TOOL 2 -->
+                <div class="flex flex-col items-start">
+                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
+                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
+                    </div>
+                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
+                        &lt;Tool Name&gt;
                     </a>
                 </div>
-            </article>
-            <!-- FIN TARJETA HERRAMIENTA 2 -->
 
-
-            <!-- INICIO TARJETA HERRAMIENTA 3 -->
-            <article class="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700 hover:border-indigo-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col">
-                <div class="h-40 w-full bg-gray-900 flex items-center justify-center border-b border-gray-700">
-                    <span class="text-5xl">🎨</span>
-                </div>
-                <div class="p-6 flex flex-col flex-grow">
-                    <h3 class="text-xl font-bold text-white mb-2">Selector de Colores</h3>
-                    <p class="text-gray-400 text-sm mb-6 flex-grow">
-                        Pequeña app para guardar tus paletas de colores favoritas y exportar los códigos HEX y RGB.
-                    </p>
-                    <!-- BOTÓN -->
-                    <a href="#" class="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-md">
-                        Abrir Herramienta
+                <!-- TOOL 3 -->
+                <div class="flex flex-col items-start">
+                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
+                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
+                    </div>
+                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
+                        &lt;Tool Name&gt;
                     </a>
                 </div>
-            </article>
-            <!-- FIN TARJETA HERRAMIENTA 3 -->
 
-        </div>
+                <!-- TOOL 4 -->
+                <div class="flex flex-col items-start">
+                    <div class="w-full h-[150px] border border-[#801a1a] mb-3 overflow-hidden">
+                        <img src="https://placehold.co/400x150/1a1a1a/801a1a?text=Image" alt="Tool placeholder" class="w-full h-full object-cover">
+                    </div>
+                    <a href="#" class="border-b border-[#801a1a] hover:bg-[#801a1a] hover:text-[#1a1a1a] transition-colors pb-1">
+                        &lt;Tool Name&gt;
+                    </a>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RIGHT SIDE: ABOUT ME -->
+        <aside class="w-full md:w-1/3 min-h-[400px] border border-[#801a1a] p-6 flex flex-col">
+            <h2 class="text-4xl mb-8 text-center">About Me</h2>
+            <div class="text-xl sm:text-2xl leading-relaxed flex-grow">
+                <p class="mb-4">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula.
+                </p>
+                <p>
+                    &lt;Text&gt;
+                </p>
+            </div>
+        </aside>
+
     </main>
-
-    <!-- ==========================================
-         PIE DE PÁGINA (Footer)
-         ========================================== -->
-    <footer class="mt-20 border-t border-gray-800 text-center py-6 text-gray-500 text-sm">
-        <p>© 2026 Tu Nombre. Creado con HTML y CSS.</p>
-    </footer>
 
 </body>
 </html>
