@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil de Herramientas</title>
+    
+    <!-- Cargamos Tailwind CSS para los estilos modernos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Cargamos la fuente Inter de Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Configuración básica para usar la fuente y personalizar el color -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Fondo oscuro */
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen pb-12">
+
+    <!-- ==========================================
+         SECCIÓN DE PERFIL (Header)
+         ========================================== -->
+    <header class="bg-gray-800 border-b border-gray-700 py-12 px-4 shadow-md">
+        <div class="max-w-3xl mx-auto flex flex-col items-center text-center">
+            
+            <!-- FOTO DE PERFIL: Cambia el enlace "src" por la URL de tu imagen -->
+            <div class="relative w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-500 shadow-lg mb-5">
+                <img src="https://placehold.co/400x400/4f46e5/ffffff?text=Mi+Foto" alt="Foto de perfil" class="w-full h-full object-cover">
+            </div>
+
+            <!-- TU NOMBRE: Cambia el texto de abajo -->
+            <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Tu Nombre o Apodo</h1>
+            
+            <!-- TU BIO: Cambia este texto por tu descripción -->
+            <p class="text-gray-400 text-lg max-w-lg">
+                ¡Hola! Aquí subo todas las pequeñas herramientas, calculadoras y programas web que voy creando. Todo es gratis y se usa directo desde el navegador.
+            </p>
+
+        </div>
+    </header>
+
+    <!-- ==========================================
+         LISTADO DE HERRAMIENTAS (Grid)
+         ========================================== -->
+    <main class="max-w-6xl mx-auto px-4 mt-12">
+        
+        <h2 class="text-2xl font-semibold mb-6 flex items-center text-gray-200">
+            <span class="bg-indigo-500 w-2 h-6 rounded mr-3"></span>
+            Mis Herramientas
+        </h2>
+
+        <!-- Contenedor del Grid: Se adapta a celulares (1 columna) y PCs (3 columnas) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <!-- INICIO TARJETA HERRAMIENTA 1 -->
+            <article class="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700 hover:border-indigo-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col">
+                <!-- Imagen de la herramienta (opcional) -->
+                <div class="h-40 w-full bg-gray-900 flex items-center justify-center border-b border-gray-700 relative">
+                    <!-- Puedes poner una imagen cambiando la etiqueta a <img> -->
+                    <span class="text-5xl">🛠️</span> 
+                </div>
+                
+                <div class="p-6 flex flex-col flex-grow">
+                    <!-- Título y descripción -->
+                    <h3 class="text-xl font-bold text-white mb-2">Calculadora de XYZ</h3>
+                    <p class="text-gray-400 text-sm mb-6 flex-grow">
+                        Una herramienta sencilla para calcular cosas rápidamente sin complicaciones. Solo pones los datos y listo.
+                    </p>
+                    
+                    <!-- BOTÓN: Cambia href="#" por el nombre de tu archivo, ej: href="calculadora.html" -->
+                    <a href="#" class="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-md">
+                        Abrir Herramienta
+                    </a>
+                </div>
+            </article>
+            <!-- FIN TARJETA HERRAMIENTA 1 -->
+
+
+            <!-- INICIO TARJETA HERRAMIENTA 2 -->
+            <article class="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700 hover:border-indigo-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col">
+                <div class="h-40 w-full bg-gray-900 flex items-center justify-center border-b border-gray-700">
+                    <span class="text-5xl">📝</span>
+                </div>
+                <div class="p-6 flex flex-col flex-grow">
+                    <h3 class="text-xl font-bold text-white mb-2">Generador de Textos</h3>
+                    <p class="text-gray-400 text-sm mb-6 flex-grow">
+                        Genera formatos automáticos para copiar y pegar en otras plataformas o documentos.
+                    </p>
+                    <!-- BOTÓN -->
+                    <a href="#" class="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-md">
+                        Abrir Herramienta
+                    </a>
+                </div>
+            </article>
+            <!-- FIN TARJETA HERRAMIENTA 2 -->
+
+
+            <!-- INICIO TARJETA HERRAMIENTA 3 -->
+            <article class="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700 hover:border-indigo-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col">
+                <div class="h-40 w-full bg-gray-900 flex items-center justify-center border-b border-gray-700">
+                    <span class="text-5xl">🎨</span>
+                </div>
+                <div class="p-6 flex flex-col flex-grow">
+                    <h3 class="text-xl font-bold text-white mb-2">Selector de Colores</h3>
+                    <p class="text-gray-400 text-sm mb-6 flex-grow">
+                        Pequeña app para guardar tus paletas de colores favoritas y exportar los códigos HEX y RGB.
+                    </p>
+                    <!-- BOTÓN -->
+                    <a href="#" class="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-md">
+                        Abrir Herramienta
+                    </a>
+                </div>
+            </article>
+            <!-- FIN TARJETA HERRAMIENTA 3 -->
+
+        </div>
+    </main>
+
+    <!-- ==========================================
+         PIE DE PÁGINA (Footer)
+         ========================================== -->
+    <footer class="mt-20 border-t border-gray-800 text-center py-6 text-gray-500 text-sm">
+        <p>© 2026 Tu Nombre. Creado con HTML y CSS.</p>
+    </footer>
+
+</body>
+</html>
