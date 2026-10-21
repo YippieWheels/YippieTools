@@ -126,9 +126,7 @@ canvas.map{width:100%;background:#000;border:1px solid var(--bd)}
 <div class="chk"><input id="sBtn" type="checkbox" checked><span>Draw a play button (click type)</span></div>
 <div class="chk"><input id="sAgain" type="checkbox"><span>Can be triggered again (restart)</span></div></div>
 <label>Ends…</label>
-<select id="eType"><option value="loop">Never (loops forever)</option><option value="turns">After a number of cycles</option><option value="stop">When a stop trigger fires</option></select>
-<div id="eTurnsBox" class="sub"><label>Number of cycles</label><input id="eTurns" type="number" min="1" value="3"><small>Uses a single timer trigger (no extra chain). If it stops too early/late after many cycles, correct it here:</small><div class="chk"><input id="snap" type="checkbox" checked><span>Snap step time to game ticks (30/s) so the cycle length is exact</span></div>
-<label>Timer correction (%)</label><input id="eCorr" type="number" step="0.5" value="0"></div>
+<select id="eType"><option value="loop">Never (loops forever)</option><option value="once">After one cycle</option><option value="stop">When a stop trigger fires</option></select>
 <div id="eAfterBox" class="sub"><label>After it ends</label><select id="eAfter"><option value="hold">Stay on the last frame</option><option value="reset">Go back to the first frame</option></select></div>
 <div id="stopBox" class="sub"><label>Stop trigger fires when</label>
 <select id="pType"><option value="player">The player enters a zone I place</option><option value="click">The player clicks a button</option><option value="trigger">Another trigger of mine activates it</option></select>
@@ -1032,18 +1030,18 @@ const HW3D = (function () {
       txt(cx, zy + zh / 2 + 18, 'ROTATION ZONES: ' + Zn + ' (the player\'s x position picks the frame)', 9, 0x7aa8ff);
     } else if (mode === 'timer') {
       const st = p.start || {}, en = p.end || { type: 'loop' }, stp = p.stop || {};
-      const hasStop = en.type === 'stop' || en.type === 'turns', TK = p.tickRate || 30;
+      const hasStop = en.type === 'stop', TK = p.tickRate || 30;
       // ---- timing: derived here from the REAL number of steps (seq), never from the UI
       const wantDt = p.cycleSec ? p.cycleSec / Lc : (p.dt || 0.1), snap = p.snap !== false;
       const ticks = snap ? Math.max(1, Math.round(wantDt * TK)) : null;           // game delays are quantised to ticks
       const dtv = +(snap ? ticks / TK : Math.max(0.01, wantDt)).toFixed(4);
-      timing = { want: wantDt * Lc, dt: dtv, ticks, cycle: +(dtv * Lc).toFixed(3), fps: +(1 / dtv).toFixed(2), steps: Lc, D: 0, turns: 0 };
+      timing = { want: wantDt * Lc, dt: dtv, ticks, cycle: +(dtv * Lc).toFixed(3), fps: +(1 / dtv).toFixed(2), steps: Lc };
       const iStart = TB, iStop = hasStop ? TB + 1 : -1, iChain = TB + 1 + (hasStop ? 1 : 0);
-      const M = Lc, nTurns = Math.max(1, Math.round(en.turns || 1)); chainN = M;
+      const once = en.type === 'once', M = once && en.after !== 'reset' ? Math.max(1, Lc - 1) : Lc; chainN = M;   // once+hold: the last frame has no step, so the chain just ends
       const resetAll = () => { const b = []; for (let i = 0; i < N; i++) b.push(gop(gidx(i), i === seq[0] ? 100 : 0)); return b; };
       const zone = (z, dflt) => ({ x: cx + (z.dx === undefined ? dflt.dx : z.dx), y: my + (z.dy === undefined ? dflt.dy : z.dy), w: z.w || dflt.w, h: z.h || dflt.h });
       // start trigger
-      const sz = zone(st, { dx: 0, dy: p.height - 60, w: 120, h: 100 }), startBody = [...resetAll(), ...(en.type === 'turns' ? [tdea(iStop), tact(iStop)] : []), tact(iChain)];
+      const sz = zone(st, { dx: 0, dy: p.height - 60, w: 120, h: 100 }), startBody = [...resetAll(), tact(iChain)];
       let sb, sr = st.again ? 2 : 1, slab;
       if (st.type === 'auto') { sb = bPlayer; slab = 'START: automatic (zone on the spawn point)'; T(spawn[0], spawn[1], st.w || 260, st.h || 260, sb, 1, 0, startBody, 'start', slab); }
       else {
@@ -1054,16 +1052,7 @@ const HW3D = (function () {
         txt(sz.x, sz.y + sz.h / 2 + 14, slab, 9, 0x4fd27a);
       }
       // stop trigger
-      if (en.type === 'turns') {
-        // ONE timer trigger instead of unrolling the chain: fires after (turns x cycle) and switches the chain off
-        const half = snap ? (ticks > 1 ? Math.floor(ticks / 2) / TK : 0) : dtv / 2, D = +(Math.max(dtv, (nTurns * Lc * dtv - half) * (1 + (en.corr || 0) / 100))).toFixed(4);
-        timing.D = D; timing.turns = nTurns;
-        const fin = en.after === 'reset' ? seq[0] : seq[Lc - 1], body = [];
-        for (let k = 0; k < M; k++) body.push(tdea(iChain + k));
-        for (let i = 0; i < N; i++) body.push(gop(gidx(i), i === fin ? 100 : 0));
-        T(cx + 150, floor + 70, 12, 12, bTrig, 2, D, body, 'stop', 'END TIMER: after ' + nTurns + ' cycle(s) = ' + D + ' s');
-        txt(cx + 150, floor + 90, 'END TIMER: ' + D + ' s', 9, 0xff7a5c);
-      } else if (hasStop) {
+      if (hasStop) {
         const zz = zone(stp, { dx: 150, dy: p.height - 60, w: 120, h: 100 }), stopBody = [];
         for (let k = 0; k < M; k++) stopBody.push(tdea(iChain + k));
         if (en.after === 'reset') stopBody.push(...resetAll());
@@ -1076,7 +1065,8 @@ const HW3D = (function () {
       const cols = Math.max(10, Math.floor(Math.max(p.size * 1.5, 480) / 16)), cy0 = floor + 110, left = cx - Math.min(cols, M) * 16 / 2;
       for (let k = 0; k < M; k++) {
         const cur = seq[k % Lc], to = seq[(k + 1) % Lc], body = [gop(gidx(to), 100), gop(gidx(cur), 0)];
-        body.push(tact(iChain + (k + 1) % M));
+        if (once) { if (k < M - 1) body.push(tact(iChain + k + 1)); }   // one cycle: the last step does not re-arm the chain
+        else body.push(tact(iChain + (k + 1) % M));
         T(left + (k % cols) * 16 + 8, cy0 + Math.floor(k / cols) * 16 + 8, 12, 12, bTrig, p.rChain === undefined ? 2 : p.rChain, dtv, body, 'chain', 'step ' + k);
       }
       txt(cx, cy0 - 22, 'FRAME CHAIN: ' + M + ' timer triggers (do not move or delete)', 9, 0x7aa8ff);
@@ -1140,7 +1130,7 @@ function labels(){
   const m=$('mode').value,st=$('sType').value,et=$('eType').value;
   const show=(id,on)=>$(id).style.display=on?'block':'none';
   show('ctlOpts',m==='control');show('timerOpts',m==='timer');show('customAxis',$('axisSel').value==='custom');
-  show('sZone',m==='timer'&&st!=='auto');show('eTurnsBox',m==='timer'&&et==='turns');show('eAfterBox',m==='timer'&&et!=='loop');show('stopBox',m==='timer'&&et==='stop');
+  show('sZone',m==='timer'&&st!=='auto');show('eAfterBox',m==='timer'&&et!=='loop');show('stopBox',m==='timer'&&et==='stop');
   show('monoOpts',$('opt').value==='mono');$('obj').style.display=$('model').value==='obj'?'block':'none';
   const o=$('dirSel').options;o[0].textContent='Forward: '+dirText(1);o[1].textContent='Reverse: '+dirText(-1);
   $('dirNote').textContent='';
@@ -1155,9 +1145,9 @@ function params(){
     turnsAcross:num('turnsAcross'),zoneDY:num('zoneDY'),zoneH:num('zoneH'),
     scene:{floor:chk('sFloor'),walls:chk('sWalls'),stripe:chk('sStripe'),back:chk('sBack'),text:chk('sTxt')?($('sTxtVal').value||(m==='control'?'Move the vehicle left and right to rotate the model':'3D model')):''},
     start:{type:$('sType').value,dx:num('sdx'),dy:num('sdy'),w:num('sw'),h:num('sh'),button:chk('sBtn'),again:chk('sAgain')},
-    end:{type:$('eType').value,turns:num('eTurns'),corr:num('eCorr'),after:$('eAfter').value},
+    end:{type:$('eType').value,after:$('eAfter').value},
     stop:{type:$('pType').value,dx:num('pdx'),dy:num('pdy'),w:num('pw'),h:num('ph'),button:chk('pBtn')}};
-  p.cycleSec=num('turnSec');p.snap=(m==='timer'&&p.end.type==='turns'&&chk('snap'));
+  p.cycleSec=num('turnSec');p.snap=false;
   if(cur){p.idBase=cur.idBase;p.groupBase=cur.groups;p.trigBase=cur.trigs;if(cur.x!=null&&cur.y!=null)p.spawn=[cur.x,cur.y]}
   return p;
 }
@@ -1174,7 +1164,7 @@ function run(){
     (kb>900?'<br><span class="warn">Very large file: if the game freezes on import, lower the frames or detail.</span>':'')+
     (p.mode==='timer'&&p.end.type==='stop'?'<br><span class="warn">Stop uses the "Deactivate" action (Advanced). If it does nothing, change that number.</span>':'')+
     (p.mode==='control'?`<br>Each zone is ${(p.arenaW/Math.max(1,Math.round(r.seq.length*p.turnsAcross))).toFixed(1)} units wide.`:'')+
-    (r.timing&&p.end.type!=='turns'?`<br>One cycle takes ~${r.timing.cycle} s (${(r.timing.dt*1000).toFixed(0)} ms per frame).`:'')+(r.timing&&p.end.type==='turns'?`<br>Timing: <b>${r.timing.steps}</b> steps × <b>${(r.timing.dt*1000).toFixed(1)} ms</b> (${r.timing.fps} fps${r.timing.ticks?', '+r.timing.ticks+' tick'+(r.timing.ticks>1?'s':'')+' per step':''}) = <b>${r.timing.cycle} s</b> per cycle`+(Math.abs(r.timing.cycle-r.timing.want)/r.timing.want>0.08?` <span class="warn">(you asked ${r.timing.want.toFixed(2)} s: step time is rounded to whole game ticks, 1/30 s each; change the frames, the seconds, or untick snapping)</span>`:'')+(r.timing.D?`<br>End timer: <b>${r.timing.D} s</b> = ${r.timing.turns} cycle(s) minus half a step`:''):'')+
+    (r.timing?`<br>One cycle takes ~${r.timing.cycle} s (${(r.timing.dt*1000).toFixed(0)} ms per frame).`:'')+
     (!cur&&!p.scene.floor?'<br><span class="warn">New level without floor: the player will fall. Tick Floor or paste your level.</span>':'');
   draw();drawMap();
 }
@@ -1196,7 +1186,7 @@ function drawMap(){
   $('mapLeg').innerHTML='<span><i style="background:#2fbf5a"></i>start trigger</span><span><i style="background:#ff7a1a"></i>stop trigger</span><span><i style="background:#5f9bff"></i>frame chain / zones</span><span><i style="background:#8a2a1a"></i>floor</span>';
 }
 function debounce(){clearTimeout(timer);labels();timer=setTimeout(run,200)}
-['opt','shades','rres','pbud','model','mode','frames','detail','size','pitch','persp','color','back','spec','outline','fore','arena','veh','turnSec','snap','bp','bk','bt','rz','rch','yaw0','pitch0','roll0','opa','tra','dea','cx','cy','two','flip','sx','sy','sz','axisSel','ax','ay','az','dirSel','sweep','pingpong','sType','sdx','sdy','sw','sh','sBtn','sAgain','eType','eTurns','eCorr','eAfter','pType','pdx','pdy','pw','ph','pBtn','sFloor','sWalls','sStripe','sBack','sTxt','sTxtVal','labels','lightAz','lightEl','ambient','turnsAcross','zoneDY','zoneH'].forEach(i=>$(i).addEventListener('input',debounce));
+['opt','shades','rres','pbud','model','mode','frames','detail','size','pitch','persp','color','back','spec','outline','fore','arena','veh','turnSec','bp','bk','bt','rz','rch','yaw0','pitch0','roll0','opa','tra','dea','cx','cy','two','flip','sx','sy','sz','axisSel','ax','ay','az','dirSel','sweep','pingpong','sType','sdx','sdy','sw','sh','sBtn','sAgain','eType','eAfter','pType','pdx','pdy','pw','ph','pBtn','sFloor','sWalls','sStripe','sBack','sTxt','sTxtVal','labels','lightAz','lightEl','ambient','turnsAcross','zoneDY','zoneH'].forEach(i=>$(i).addEventListener('input',debounce));
 document.querySelectorAll('[data-pitch]').forEach(b=>b.onclick=()=>{$('pitch').value=b.dataset.pitch;debounce()});
 function preset(demo){['sFloor','sWalls','sStripe','sBack','sTxt'].forEach(i=>$(i).checked=demo);debounce()}
 $('presetDemo').onclick=()=>preset(true);$('presetOnly').onclick=()=>preset(false);

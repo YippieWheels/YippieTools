@@ -71,7 +71,8 @@ small{color:var(--mu);font-size:15px;line-height:1.25}
 <label>Import extra level code</label>
 <textarea id="xlvl" style="height:70px;margin-top:6px" placeholder="Paste the extra &lt;levelXML&gt; here"></textarea>
 <input id="t_ox" type="hidden" value="0"><input id="t_oy" type="hidden" value="0">
-<div class="chk"><input id="x_keepg" type="checkbox"><span>Keep its own groups separate</span></div>
+<div class="chk"><input id="x_keepg" type="checkbox" checked><span>Keep its own groups separate</span></div>
+<div class="ai" id="keepWarn" style="margin-top:6px;display:none">⚠ If this is off, everything imported (the art) is merged into one single group. This can break mechanics that use triggers, such as imported videos or anything that works with frames.</div>
 <div class="row"><button id="xadd">Add to level</button><button id="xfile" class="s">From file…</button></div>
 <small class="cap" style="line-height:1.45">Adds more Level Data on top of the level above: another level, images or 3D models made with my other tools, art, etc. Everything that can be grouped goes into one new group, so it moves as a single piece.</small>
 <input id="xfin" type="file" accept=".txt,.xml,text/*" hidden>
@@ -809,4 +810,6 @@ $('xs').addEventListener('input', () => ($('vX').textContent = $('xs').value));
 $('vX').textContent = $('xs').value;
 new ResizeObserver(size).observe($('stage')); size();
 setTool('box');
+
+;(function(){var k=document.getElementById('x_keepg'),w=document.getElementById('keepWarn');if(k&&w){var u=function(){w.style.display=k.checked?'none':'block'};k.addEventListener('change',u);u()}})();
 </script></body></html>

@@ -68,8 +68,8 @@ details>summary{color:var(--yl)}
 <h1>Video → Happy Wheels</h1>
 <small>Turns a silent video into a level: a button plays it, triggers can add sound effects.</small>
 <div class="ai">⚠ This program was made by an AI for experimental purposes. Expect bugs of all kinds.</div>
-<div id="drop">Drop a video here<br>or click to choose</div>
-<input id="file" type="file" accept="video/*" hidden>
+<div id="drop">Drop a video, GIF or animated WebP here<br>or click to choose</div>
+<input id="file" type="file" accept="video/*,image/gif,image/webp,.gif,.webp" hidden>
 
 <h2>1 · Trim &amp; speed</h2>
 <div class="tip"><b>How to trim:</b> drag the blue <b>IN</b> and <b>OUT</b> handles on the timeline under the preview (or move the playhead and press the buttons below, or keys <b>I</b> / <b>O</b>). Only the part between IN and OUT is converted.</div>
@@ -88,6 +88,7 @@ details>summary{color:var(--yl)}
 <label>Size in game (max width × height)</label>
 <div class="row"><div><input id="vw" type="number" value="400"></div><div><input id="vh" type="number" value="225"></div></div>
 <small>The camera shows about 640×360 (the video, the button and the floor must fit). Art used ≈ (colors − 1) × frames.</small>
+<small style="color:#ffb86b">Note: the most common color of the video (usually the background, e.g. black) gets no art, so the level's own background color shows through. If it looks wrong in the game, change the level background color.</small>
 
 <h2>3 · Playback</h2>
 <label>Start</label>
@@ -693,18 +694,53 @@ const key=()=>JSON.stringify([num('ts'),num('te'),num('fps'),num('colors'),num('
 const fresh=()=>conv&&conv.key===key();
 
 /* ---------- video ---------- */
+/* ---------- animated images (GIF / animated WebP) via WebCodecs ImageDecoder ---------- */
+const isAnimImg=f=>f&&(/^image\/(gif|webp)$/.test(f.type)||/\.(gif|webp)$/i.test(f.name||''));
+let autoLoop=false;
+function makeAnim(frames,dur,w,h){let t=0,pl=false,t0=0,p0=0;
+  return{isAnim:true,frames,duration:dur,videoWidth:w,videoHeight:h,
+    get currentTime(){return pl?Math.min(dur,p0+(performance.now()-t0)/1000):t},
+    set currentTime(v){t=v;p0=v;t0=performance.now()},
+    play(){pl=true;p0=t;t0=performance.now()},pause(){if(pl){t=this.currentTime;pl=false}}}}
+function vsrc(){if(!video||!video.isAnim)return video;const F=video.frames,t=video.currentTime;let lo=0,hi=F.length-1;
+  while(lo<hi){const m=(lo+hi+1)>>1;if(F[m].t0<=t)lo=m;else hi=m-1}return F[lo].bmp}
+async function loadAnim(f){
+  if(typeof ImageDecoder==='undefined'){$('stats').innerHTML='<span class="warn">This browser cannot decode GIF / animated WebP here. Use Chrome, Edge or a recent Safari, or convert it to MP4.</span>';return}
+  $('stats').textContent='Reading animation…';
+  try{
+    const dec=new ImageDecoder({data:await f.arrayBuffer(),type:f.type||(/\.gif$/i.test(f.name)?'image/gif':'image/webp')});
+    await dec.tracks.ready;const n=dec.tracks.selectedTrack.frameCount;
+    if(!(n>1)){$('stats').innerHTML='<span class="warn">That image is not animated (only 1 frame).</span>';return}
+    const MAXF=900,use=Math.min(n,MAXF),frames=[];let t=0,W=0,H=0,durs=[];
+    for(let i=0;i<use;i++){
+      if(i%10===0){$('stats').textContent='Reading animation… '+i+'/'+use;await new Promise(r=>setTimeout(r,0))}
+      const {image}=await dec.decode({frameIndex:i});
+      let d=(image.duration||0)/1e6;if(d<=0.011)d=0.1;            // browsers treat 0-10 ms GIF delays as 100 ms
+      const sc=Math.min(1,960/Math.max(image.displayWidth,image.displayHeight));W=Math.round(image.displayWidth*sc);H=Math.round(image.displayHeight*sc);
+      const bmp=await createImageBitmap(image,{resizeWidth:W,resizeHeight:H,resizeQuality:'high'});image.close();
+      frames.push({bmp,t0:t,d});durs.push(d);t+=d}
+    const v=makeAnim(frames,t,W,H),med=durs.slice().sort((a,b)=>a-b)[durs.length>>1];
+    video=v;vdur=t;vW=W;vH=H;conv=null;last=null;live=null;rawCache={key:''};sfx=[];pt=0;
+    $('ts').value=0;$('te').value=+vdur.toFixed(2);
+    const nat=Math.max(1,Math.min(15,Math.round(1/med)));$('fps').value=nat;
+    $('endMode').value='loop';autoLoop=true;
+    $('drop').classList.add('on');$('drop').innerHTML=f.name.replace(/</g,'&lt;')+' · '+fmt(vdur)+' · '+vW+'×'+vH+' · '+use+' frames'+(use<n?' (first '+use+' of '+n+')':'')+'<br><small>animated image: set to loop · '+nat+' fps</small>';
+    $('conv').disabled=false;$('play').disabled=false;renderSfx();seekDraw(0);refresh();
+  }catch(err){$('stats').innerHTML='<span class="warn">Could not read that animation: '+String(err.message||err).replace(/</g,'&lt;')+'</span>'}
+}
 function loadVideo(f){
-  if(!f)return;const v=document.createElement('video');v.muted=true;v.preload='auto';v.playsInline=true;
+  if(!f)return;if(isAnimImg(f))return loadAnim(f);
+  if(autoLoop){$('endMode').value='restart';autoLoop=false}const v=document.createElement('video');v.muted=true;v.preload='auto';v.playsInline=true;
   v.onloadedmetadata=()=>{video=v;vdur=v.duration;vW=v.videoWidth;vH=v.videoHeight;conv=null;last=null;live=null;rawCache={key:''};sfx=[];pt=0;
     $('ts').value=0;$('te').value=+vdur.toFixed(2);$('drop').classList.add('on');$('drop').innerHTML=f.name.replace(/</g,'&lt;')+' · '+fmt(vdur)+' · '+vW+'×'+vH+'<br><small>drop another to replace</small>';
     $('conv').disabled=false;$('play').disabled=false;renderSfx();seekDraw(0);refresh()};
   v.onerror=()=>{$('stats').innerHTML='<span class="warn">This browser cannot read that video. Try MP4 (H.264) or WebM.</span>'};
   v.src=URL.createObjectURL(f);
 }
-function seek(t){return new Promise(r=>{if(Math.abs(video.currentTime-t)<1e-3){r();return}
+function seek(t){if(video.isAnim){video.currentTime=t;return Promise.resolve()}return new Promise(r=>{if(Math.abs(video.currentTime-t)<1e-3){r();return}
   const h=()=>{video.removeEventListener('seeked',h);r()};video.addEventListener('seeked',h);video.currentTime=t})}
 function grab(t,w,h){return seek(Math.min(vdur-0.001,t)).then(()=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
-  g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(video,0,0,w,h);return g.getImageData(0,0,w,h).data.slice()})}
+  g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(vsrc(),0,0,w,h);return g.getImageData(0,0,w,h).data.slice()})}
 const dims=()=>{const R=num('res'),s=R/Math.max(vW,vH);return{w:Math.max(8,Math.round(vW*s)),h:Math.max(8,Math.round(vH*s))}};
 
 /* ---------- full conversion ---------- */
@@ -799,7 +835,7 @@ function draw(){
   if(!video){g.fillStyle='#000';g.fillRect(0,0,cv.width,cv.height);return}
   const stale=conv&&!fresh();
   if($('orig').checked||(!conv&&!(live&&live.key===key()&&Math.abs(live.t-pt)<1e-6)&&playing)){
-    cv.width=Math.min(960,num('vw')*2);cv.height=Math.round(cv.width*vH/vW);g.drawImage(video,0,0,cv.width,cv.height);
+    cv.width=Math.min(960,num('vw')*2);cv.height=Math.round(cv.width*vH/vW);g.drawImage(vsrc(),0,0,cv.width,cv.height);
     if(!$('orig').checked)banner(g,cv,'⚠ original video – not converted yet');
   }else if(conv&&!stale){
     paint(cv,g,conv.pal,conv.fr[curFrame()],conv.unit,conv.fw,conv.fh);
@@ -811,7 +847,7 @@ function draw(){
     paint(cv,g,conv.pal,conv.fr[curFrame()],conv.unit,conv.fw,conv.fh);
     banner(g,cv,playing?'⚠ OLD settings – video not converted with the new ones':'updating preview…');
   }else{
-    cv.width=Math.min(960,num('vw')*2);cv.height=Math.round(cv.width*vH/vW);g.drawImage(video,0,0,cv.width,cv.height);
+    cv.width=Math.min(960,num('vw')*2);cv.height=Math.round(cv.width*vH/vW);g.drawImage(vsrc(),0,0,cv.width,cv.height);
     banner(g,cv,'updating preview…','rgba(255,196,36,.95)');
   }
   if(conv){const f=curFrame(),hit=sfx.find(a=>{const sf=Math.round((a.t-conv.ts)*conv.fps);return f>=sf&&f<sf+Math.max(2,Math.round(conv.fps*0.4))});
@@ -877,7 +913,7 @@ function build(){
   const dt=+(1/conv.fps).toFixed(4),lay=[],specials=[],shapes=[],groups=[],trig=[];let art=0;
   const txt=(x,y,s,size,col)=>{if(!lab)return;specials.push(`<sp t="16" p0="${r1(x)}" p1="${r1(y)}" p2="0" p3="${col||0x9a93b0}" p4="2" p5="${size||9}" p6="1" p8="100"><p7><![CDATA[${esc(s)}]]></p7></sp>`)};
   const rect=(x,y,w,h,col,inter)=>shapes.push(`<sh t="0"${inter?'':' i="f"'} p0="${r1(x)}" p1="${r1(y)}" p2="${Math.round(w)}" p3="${Math.round(h)}" p4="0" p5="t" p6="f" p7="1" p8="${col}" p9="-1" p10="100" p11="1"/>`);
-  rect(X+fw/2,Y+fh/2,fw,fh,hexc(conv.pal[0]),false);art++;lay.push({k:'video',x:X,y:Y,w:fw,h:fh,l:'video'});
+  /* no background rectangle: a shape drawn in front of the groups would cover the video */lay.push({k:'video',x:X,y:Y,w:fw,h:fh,l:'video'});
   const sc=conv.unit;
   for(let i=0;i<N;i++){
     const sh=conv.fr[i].map(s=>C.artXml(s.pts.map(p=>[p[0]*sc,p[1]*sc]),hexc(conv.pal[s.c]),id++,X,Y));art+=sh.length;
@@ -967,7 +1003,7 @@ let sfxSig='';function renderSfxStatus(){const s=JSON.stringify([sfx.length,num(
 const deb=()=>{clearTimeout(timer);labels();timer=setTimeout(refresh,250)};
 ['ts','te','fps','colors','res','budget','smooth','blur','vw','vh','startMode','looseB','endMode','labels','floor','px','py','bClick','bTrig','rChain','rBtn','opa','tra','dea','sndT','sndV','sOff','bw','bh','lw','lh'].forEach(i=>$(i).addEventListener('input',deb));
 $('drop').onclick=()=>$('file').click();$('file').onchange=e=>loadVideo(e.target.files[0]);
-document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();const f=[...e.dataTransfer.files].find(f=>f.type.startsWith('video/'));loadVideo(f)});
+document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();const f=[...e.dataTransfer.files].find(f=>f.type.startsWith('video/')||isAnimImg(f));loadVideo(f)});
 $('conv').onclick=convert;$('cancel').onclick=()=>{cancel=true};
 $('orig').onchange=()=>seekDraw(pt);
 $('play').onclick=()=>playing?stopPlay():startPlay();
