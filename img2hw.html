@@ -1,34 +1,57 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Image to Happy Wheels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#14111f;--pn:#1e1a2e;--tx:#ece8f5;--mu:#9a93b0;--ac:#ffc424;--bd:#34304a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;display:flex;min-height:100vh}
-aside{width:330px;padding:18px;background:var(--pn);border-right:1px solid var(--bd);overflow:auto;max-height:100vh;position:sticky;top:0}
-main{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
-h1{font-size:18px;margin:0 0 6px;color:var(--ac)}
-.ai{margin:8px 0 14px;padding:7px 9px;border:1px solid #ff4d8d;border-radius:6px;background:#ff4d8d1a;color:#ff5c9a;font-size:12px;font-weight:700;line-height:1.4}
-select{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px}
-#drop{border:2px dashed var(--bd);border-radius:10px;padding:14px;text-align:center;color:var(--mu);cursor:pointer}
-#drop.on{border-color:var(--ac);color:var(--tx)}
+:root{--bg:#0a0a0a;--pn:#0d0d0d;--tx:#ff4a3a;--mu:#c9544a;--ac:#ff1a1a;--bd:#7a0c0c;--hi:#ffe1b8;--yl:#ffd23f;--f:"VT323","Courier New",ui-monospace,monospace;--fh:"Silkscreen","VT323","Courier New",monospace}
+*{box-sizing:border-box;border-radius:0}
+::selection{background:var(--ac);color:#000}
+*{scrollbar-width:thin;scrollbar-color:#b00 #120000}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:#120000}::-webkit-scrollbar-thumb{background:#b00;border:2px solid #120000}
+body::before{content:"";position:fixed;inset:6px;border:1px solid var(--ac);pointer-events:none;z-index:9998}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(255,0,0,.045) 0 1px,transparent 1px 3px)}
+b,strong{font-weight:400;color:var(--hi)}
+a{color:var(--yl)}a:hover{background:var(--yl);color:#000}
+:focus-visible{outline:2px dashed var(--yl);outline-offset:2px}
+input[type=range],input[type=checkbox],input[type=radio],progress{accent-color:var(--ac)}
+select,input[type=number],input[type=text],input:not([type]),input[type=search],input[type=color]+x{font-family:var(--f);font-size:17px}
+option{background:#000;color:var(--tx)}
+
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.3 var(--f);display:flex;min-height:100vh}
+aside{width:330px;padding:22px 20px;background:var(--pn);border-right:1px solid var(--ac);overflow:auto;max-height:100vh;position:sticky;top:0}
+main{flex:1;padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h1{font:400 19px/1.25 var(--fh);letter-spacing:.06em;margin:0 0 8px;color:var(--ac);text-shadow:2px 2px 0 #4a0000}
+h1::before{content:"\2605 ";color:var(--yl);text-shadow:none}
+.ai{margin:10px 0 14px;padding:7px 9px;border:1px dashed var(--yl);background:#1a1400;color:var(--yl);font-size:16px;line-height:1.25}
+select{width:100%;background:#000;color:var(--hi);border:1px solid var(--bd);padding:5px 6px}
+select:hover,input[type=number]:hover,textarea:hover{border-color:var(--ac)}
+#drop{border:2px dashed var(--ac);padding:16px 14px;text-align:center;color:var(--mu);cursor:pointer;background:#0f0000}
+#drop:hover{background:#1c0000;color:var(--hi)}
+#drop.on{border-style:solid;color:var(--hi);background:#220000}
 #list{display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:170px;overflow:auto}
-#list div{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:6px;padding:3px 6px;font-size:12px}
-#list img{width:34px;height:24px;object-fit:cover;border-radius:3px}
+#list div{display:flex;align-items:center;gap:8px;background:#000;border:1px dotted var(--bd);padding:3px 6px;font-size:15px}
+#list img{width:34px;height:24px;object-fit:cover;border:1px solid var(--bd);image-rendering:pixelated}
 #list span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#list a{cursor:pointer;color:var(--mu);padding:0 4px}#list a:hover{color:#ff8a8a}
-label{display:block;margin-top:12px;font-size:13px;color:var(--mu)}label b{color:var(--tx);float:right}
-input[type=range]{width:100%;accent-color:var(--ac)}
-input[type=number]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:5px}
-textarea{width:100%;height:70px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px;font:11px monospace;resize:vertical}
+#list a{cursor:pointer;color:var(--mu);padding:0 4px}#list a:hover{background:transparent;color:#ff8a8a}
+label{display:block;margin-top:12px;font-size:16px;color:var(--mu)}label b{float:right}
+input[type=range]{width:100%}
+input[type=number]{width:100%;background:#000;color:var(--hi);border:1px solid var(--bd);padding:4px 6px}
+input[type=color]{background:#000;border:1px solid var(--bd);padding:2px;cursor:pointer}
+textarea{width:100%;height:70px;background:#000;color:var(--hi);border:1px solid var(--bd);padding:6px;font:15px/1.15 var(--f);resize:vertical}
 .row{display:flex;gap:8px}.row>div{flex:1}
-button{background:var(--ac);color:#1b1500;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
-button.s{background:var(--bd);color:var(--tx)}
-#stats{font-size:13px;color:var(--mu);line-height:1.5}#stats b{color:var(--tx)}
+button{background:var(--ac);color:#000;border:1px solid var(--ac);padding:8px 14px;font:400 17px var(--f);letter-spacing:.04em;cursor:pointer;width:100%;margin-top:10px;box-shadow:3px 3px 0 #4a0000}
+button:hover{background:#000;color:var(--ac)}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #4a0000}
+button.s{background:#000;color:var(--tx);border:1px solid var(--bd)}
+button.s:hover{background:var(--bd);color:var(--hi);border-color:var(--ac)}
+#stats{font-size:17px;color:var(--mu);line-height:1.3;border:1px solid var(--bd);padding:6px 10px;background:var(--pn)}#stats b{color:var(--hi)}
 .warn{color:#ff8a8a}
-#stage{flex:1;display:flex;align-items:center;justify-content:center;background:#0c0a14;border:1px solid var(--bd);border-radius:10px;min-height:300px;overflow:auto}
+#stage{flex:1;display:flex;align-items:center;justify-content:center;background:#000;border:1px solid var(--ac);min-height:300px;overflow:auto}
 canvas{max-width:100%;max-height:100%}
-small{color:var(--mu)}
+small{color:var(--mu);font-size:15px;line-height:1.25}
 @media(max-width:760px){body{flex-direction:column}aside{width:auto;max-height:none;position:static}}
+@media(prefers-reduced-motion:reduce){button:active{transform:none}}
+
 </style></head><body>
 <aside>
 <h1>Image → Happy Wheels</h1>
@@ -54,6 +77,12 @@ small{color:var(--mu)}
 <label>Size of each image (max width × height)</label>
 <div class="row"><div><input id="vw" type="number" value="640"></div><div><input id="vh" type="number" value="360"></div></div>
 <small>The camera shows about 640×360.</small>
+<label>Transparent areas (PNG / WebP)</label>
+<div class="chk" style="display:flex;gap:8px;align-items:center;margin-top:6px"><input id="cut" type="checkbox" checked><span style="font-size:16px">No background: transparent areas get no art</span></div>
+<small>Only with the one-shape-per-color method. Otherwise (or unchecked) they are filled with:</small>
+<input id="bg" type="color" value="#ffffff" style="width:100%;height:32px">
+<div class="row"><button class="s" type="button" id="bgW" style="margin-top:6px;padding:5px">White</button><button class="s" type="button" id="bgK" style="margin-top:6px;padding:5px">Black</button><button class="s" type="button" id="bgA" style="margin-top:6px;padding:5px">Auto</button></div>
+<small>Auto picks black or white, whichever contrasts with the image.</small>
 <label>Gap between images / images per row (0 = auto)</label>
 <div class="row"><div><input id="gap" type="number" value="40"></div><div><input id="perRow" type="number" value="0" min="0"></div></div>
 <label>Position of the first image (x, y)</label>
@@ -492,9 +521,9 @@ const HWCore = (function () {
   }
   function w_h_guess(loops) { let mx = 0, my = 0; for (const L of loops) for (const p of L) { if (p[0] > mx) mx = p[0]; if (p[1] > my) my = p[1]; } return mx * my; }
 
-  function buildMono(labels, w, h, eps, smooth, K) {
+  function buildMono(labels, w, h, eps, smooth, K, c0) {
     const shapes = [];
-    for (let c = 1; c < K; c++) {
+    for (let c = (c0 === undefined ? 1 : c0); c < K; c++) {
       const mask = new Uint8Array(w * h); let any = 0;
       for (let p = 0; p < w * h; p++) if (labels[p] === c) { mask[p] = 1; any = 1; }
       if (!any) continue;
@@ -510,8 +539,8 @@ const HWCore = (function () {
   const monoPoints = (shapes) => 4 + shapes.reduce((a, s) => a + s.pts.length, 0);
 
   // bisection of detail so that total points <= budget
-  function fitMono(labels0, w, h, budget, smooth, K) {
-    const run = (t) => buildMono(cleanSmall(labels0, w, h, 2 + (1 - t) * 60), w, h, 0.4 + (1 - t) * 2.2, smooth, K);
+  function fitMono(labels0, w, h, budget, smooth, K, c0) {
+    const run = (t) => buildMono(cleanSmall(labels0, w, h, 2 + (1 - t) * 60), w, h, 0.4 + (1 - t) * 2.2, smooth, K, c0);
     let best = run(0), bt = 0;
     if (monoPoints(best) > budget) return { shapes: best, t: 0, ok: false };
     const top = run(1);
@@ -523,17 +552,54 @@ const HWCore = (function () {
 
   /* o: {colors,pointBudget,blur,smooth,viewW,viewH,cellW,cellH,x,y,idBase} */
   function convertMono(rgba, w, h, o) {
-    const { labels, pal } = quantizeLab(rgba, w, h, o.colors, o.blur, 1), K = pal.length;
-    const { shapes, t, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K);
+    // o.cutAlpha: transparent pixels (alpha < 128) get no art at all (PNG without background)
+    let src = rgba, voidN = 0;
+    if (o.cutAlpha) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let p = 0; p < w * h; p++) if (rgba[p * 4 + 3] >= 128) { r += rgba[p * 4]; g += rgba[p * 4 + 1]; b += rgba[p * 4 + 2]; n++; } else voidN++;
+      if (voidN && n) { src = new Uint8ClampedArray(rgba); r = r / n | 0; g = g / n | 0; b = b / n | 0;
+        for (let p = 0; p < w * h; p++) if (src[p * 4 + 3] < 128) { src[p * 4] = r; src[p * 4 + 1] = g; src[p * 4 + 2] = b; } src = Uint8ClampedArray.from(src); for (let p = 0; p < w * h; p++) src[p * 4 + 3] = 255; }
+      else voidN = 0;
+    }
+    const Q = quantizeLab(src, w, h, o.colors, o.blur, 1), pal = Q.pal, K = pal.length, labels = Q.labels;
+    if (voidN) for (let p = 0; p < w * h; p++) if (rgba[p * 4 + 3] < 128) labels[p] = K;   // label K = no art
+    const { shapes, t, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K, voidN ? 0 : 1);
     const unit = Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0, fw = w * unit, fh = h * unit;
     const X = o.x + (o.cellW ? (o.cellW - fw) / 2 : 0), Y = o.y + (o.cellH ? (o.cellH - fh) / 2 : 0);
     const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);   // same array objects -> bridge vertices stay identical
-    const xs = [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)];
-    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + 1, X, Y)));
+    const xs = voidN ? [] : [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)], off = voidN ? 0 : 1;
+    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + off, X, Y)));
     const gx = r1(X + fw / 2), gy = r1(Y + fh / 2);
     const group = `<g x="${gx}" y="${gy}" r="0" ox="${-gx}" oy="${-gy}" s="f" f="f" o="100" im="f" fr="f">\n${xs.join('\n')}\n</g>`;
-    const polys = [{ c: 0, pts: [[0, 0], [w, 0], [w, h], [0, h]] }].concat(shapes);
-    return { group, X, Y, polys, pal, w, h, t, ok, count: xs.length, points: monoPoints(shapes), fw: Math.round(fw), fh: Math.round(fh), unit, mono: true, colors: K };
+    const polys = (voidN ? [] : [{ c: 0, pts: [[0, 0], [w, 0], [w, h], [0, h]] }]).concat(shapes);
+    return { group, X, Y, polys, pal, w, h, t, ok, count: xs.length, cut: !!voidN, points: monoPoints(shapes), fw: Math.round(fw), fh: Math.round(fh), unit, mono: true, colors: K };
+  }
+
+
+  // ---------- video: one shared palette for all frames (no color flicker) ----------
+  function buildPalette(frames, w, h, K, blur) {
+    const big = new Uint8ClampedArray(frames.length * w * h * 4);
+    frames.forEach((f, i) => big.set(f, i * w * h * 4));
+    return quantizeLab(big, w, h * frames.length, K, blur, 1).pal;
+  }
+  function labelPal(rgba, w, h, pal, blur) {
+    const src = bilateral(rgba, w, h, blur), n = w * h, pl = pal.map((c) => rgb2lab(c[0], c[1], c[2])), lb = new Uint8Array(n);
+    for (let p = 0; p < n; p++) {
+      const L = rgb2lab(src[p * 4], src[p * 4 + 1], src[p * 4 + 2]); let best = 0, bd = Infinity;
+      for (let k = 0; k < pl.length; k++) { const a = L[0] - pl[k][0], b = L[1] - pl[k][1], c = L[2] - pl[k][2], d = a * a + b * b + c * c; if (d < bd) { bd = d; best = k; } }
+      lb[p] = best;
+    }
+    return lb;
+  }
+  /* o: {pointBudget,blur,smooth,viewW,viewH,x,y,idBase}; returns art shapes as xml strings (no group wrapper) */
+  function convertFramePal(rgba, w, h, pal, o) {
+    const labels = labelPal(rgba, w, h, pal, o.blur), K = pal.length;
+    const { shapes, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K);
+    const unit = o.unit || Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0, fw = w * unit, fh = h * unit, X = o.x, Y = o.y;
+    const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);
+    const xs = [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)];
+    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + 1, X, Y)));
+    return { xs, ok, points: monoPoints(shapes), fw, fh, shapes, unit };
   }
 
   // ---------- nivel existente ----------
@@ -566,7 +632,7 @@ const HWCore = (function () {
     return `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${Math.max(50, Math.round(x))}" y="${Math.round(y)}" c="1" f="f" h="f" bg="0" bgc="16777215" e="1"/>\n    <groups>\n${groups.split('\n').map((l) => '        ' + l).join('\n')}\n    </groups>\n</levelXML>\n`;
   }
 
-  return { convert, convertMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
+  return { artXml, buildPalette, labelPal, convertFramePal, convert, convertMono, fitMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
 })();
 if (typeof module !== 'undefined') module.exports = HWCore;
 
@@ -582,7 +648,7 @@ const labels=()=>{sliders.forEach(([a,b])=>$(b).textContent=$(a).value);const m=
 const num=id=>+$(id).value;
 
 function addFiles(files){
-  const fs=[...files].filter(f=>f.type.startsWith('image/'));if(!fs.length)return;
+  const fs=[...files].filter(f=>f.type.startsWith('image/')||/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(f.name||''));if(!fs.length)return;
   let pending=fs.length;
   fs.forEach(f=>{const im=new Image();
     im.onload=()=>{items.push({name:f.name||'image',im,url:im.src});if(--pending===0)added()};
@@ -620,10 +686,10 @@ async function run(){
     const src=items[i].im,s=R/Math.max(src.width,src.height);
     const w=Math.max(8,Math.round(src.width*s)),h=Math.max(8,Math.round(src.height*s));
     const c=document.createElement('canvas');c.width=w;c.height=h;
-    const g=c.getContext('2d',{willReadFrequently:true});g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(src,0,0,w,h);
+    const g=c.getContext('2d',{willReadFrequently:true});const cut=$('cut').checked&&$('method').value==='mono';if(!cut){g.fillStyle=$('bg').value;g.fillRect(0,0,w,h)}g.drawImage(src,0,0,w,h);
     const mono=$('method').value==='mono',px_=g.getImageData(0,0,w,h).data;
     const r=(mono?HWCore.convertMono:HWCore.convert)(px_,w,h,{
-      colors:num('colors'),target:num('target'),blur:num('blur'),maxPts:num('maxPts'),pointBudget:num('budget'),smooth:num('smooth'),
+      colors:num('colors'),target:num('target'),blur:num('blur'),maxPts:num('maxPts'),pointBudget:num('budget'),smooth:num('smooth'),cutAlpha:cut,
       viewW:Lo.vw,viewH:Lo.vh,cellW:Lo.vw,cellH:Lo.vh,
       x:Lo.px+(i%Lo.cols)*Lo.pX,y:Lo.py+Math.floor(i/Lo.cols)*Lo.pY,idBase});
     idBase+=r.count;res.push(r);groups.push(r.group);
@@ -647,7 +713,7 @@ function draw(res,Lo){
   const cv=$('cv'),wTot=Lo.cols*Lo.pX-Lo.gap,hTot=Lo.rows*Lo.pY-Lo.gap;
   const S=Math.min(3,1600/wTot);cv.width=Math.max(1,Math.round(wTot*S));cv.height=Math.max(1,Math.round(hTot*S));
   const g=cv.getContext('2d'),col=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
-  g.fillStyle='#0c0a14';g.fillRect(0,0,cv.width,cv.height);
+  g.fillStyle='#000';g.fillRect(0,0,cv.width,cv.height);
   res.forEach(r=>{
     const ox=(r.X-Lo.px)*S,oy=(r.Y-Lo.py)*S,k=r.unit*S;
     if(!r.mono){g.fillStyle=col(r.pal[0]);g.fillRect(ox,oy,r.w*k,r.h*k)}
@@ -656,7 +722,7 @@ function draw(res,Lo){
   });
 }
 function debounce(){clearTimeout(timer);labels();timer=setTimeout(run,400)}
-['method','budget','smooth','target','colors','blur','res','maxPts','vw','vh','px','py','gap','perRow'].forEach(i=>$(i).addEventListener('input',debounce));
+['cut','bg','method','budget','smooth','target','colors','blur','res','maxPts','vw','vh','px','py','gap','perRow'].forEach(i=>$(i).addEventListener('input',debounce));
 $('drop').onclick=()=>$('file').click();
 $('file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 $('clear').onclick=()=>{items=[];renderList();run()};
@@ -681,4 +747,9 @@ $('lvl').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(lvlC
 $('preset').addEventListener('input',()=>{applyPreset();debounce()});
 ['colors','budget','smooth','blur','res'].forEach(i=>$(i).addEventListener('input',()=>{$('preset').value=''}));
 applyPreset();labels();
+$('bgW').onclick=()=>{$('bg').value='#ffffff';debounce()};$('bgK').onclick=()=>{$('bg').value='#000000';debounce()};
+$('bgA').onclick=()=>{autoBg();debounce()};
+function autoBg(){let n=0,sum=0;for(const it of items){const c=document.createElement('canvas');c.width=c.height=32;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(it.im,0,0,32,32);const d=g.getImageData(0,0,32,32).data;for(let i=0;i<d.length;i+=4)if(d[i+3]>200){sum+=.3*d[i]+.59*d[i+1]+.11*d[i+2];n++}}$('bg').value=(n&&sum/n>128)?'#000000':'#ffffff'}
+document.addEventListener('paste',e=>{const fs=[...(e.clipboardData&&e.clipboardData.files||[])];if(fs.length){addFiles(fs);e.preventDefault()}});
+
 </script></body></html>

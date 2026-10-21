@@ -1,65 +1,182 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>3D Engine for Happy Wheels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#14111f;--pn:#1e1a2e;--tx:#ece8f5;--mu:#9a93b0;--ac:#ffc424;--bd:#34304a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;display:flex;min-height:100vh}
-aside{width:340px;padding:18px;background:var(--pn);border-right:1px solid var(--bd);overflow:auto;max-height:100vh;position:sticky;top:0}
-main{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
-h1{font-size:18px;margin:0 0 6px;color:var(--ac)}
-label{display:block;margin-top:11px;font-size:13px;color:var(--mu)}label b{color:var(--tx);float:right}
-input[type=range]{width:100%;accent-color:var(--ac)}
-select,input[type=number]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px}
-input[type=color]{width:100%;height:32px;background:var(--bg);border:1px solid var(--bd);border-radius:6px}
-.row{display:flex;gap:8px}.row>div{flex:1}
-.chk{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px;color:var(--tx)}
-button{background:var(--ac);color:#1b1500;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
-button.s{background:var(--bd);color:var(--tx)}
-details{margin-top:12px;font-size:13px;color:var(--mu)}summary{cursor:pointer}
-#stats{font-size:13px;color:var(--mu);line-height:1.55}#stats b{color:var(--tx)}.warn{color:#ff8a8a}
-#stage{flex:1;display:flex;align-items:center;justify-content:center;background:#0c0a14;border:1px solid var(--bd);border-radius:10px;min-height:320px}
-canvas{max-width:100%;max-height:100%}
+:root{--bg:#0a0a0a;--pn:#0d0d0d;--tx:#ff4a3a;--mu:#c9544a;--ac:#ff1a1a;--bd:#7a0c0c;--hi:#ffe1b8;--yl:#ffd23f;--f:"VT323","Courier New",ui-monospace,monospace;--fh:"Silkscreen","VT323","Courier New",monospace}
+*{box-sizing:border-box;border-radius:0}
+::selection{background:var(--ac);color:#000}
+*{scrollbar-width:thin;scrollbar-color:#b00 #120000}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:#120000}::-webkit-scrollbar-thumb{background:#b00;border:2px solid #120000}
+body::before{content:"";position:fixed;inset:6px;border:1px solid var(--ac);pointer-events:none;z-index:9998}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(255,0,0,.045) 0 1px,transparent 1px 3px)}
+b,strong{font-weight:400;color:var(--hi)}
+a{color:var(--yl)}a:hover{background:var(--yl);color:#000}
+:focus-visible{outline:2px dashed var(--yl);outline-offset:2px}
+input[type=range],input[type=checkbox],input[type=radio],progress{accent-color:var(--ac)}
+select,input[type=number],input[type=text],input:not([type]),input[type=search],input[type=color]+x{font-family:var(--f);font-size:17px}
+option{background:#000;color:var(--tx)}
+
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.3 var(--f);display:flex;min-height:100vh}
+aside{width:370px;padding:22px 20px;background:var(--pn);border-right:1px solid var(--ac);overflow:auto;max-height:100vh;position:sticky;top:0}
+main{flex:1;padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h1{font:400 19px/1.25 var(--fh);letter-spacing:.06em;margin:0 0 8px;color:var(--ac);text-shadow:2px 2px 0 #4a0000}
+h1::before{content:"\2605 ";color:var(--yl);text-shadow:none}
+h2{font:400 14px/1.2 var(--fh);margin:0;padding:11px 0 6px;color:var(--ac);letter-spacing:.05em;cursor:pointer}
+h2::before{content:"\2605 ";color:var(--yl)}
+details.sec{border-top:1px dashed var(--ac);margin-top:10px}
+details.sec>summary{list-style:none}details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary:hover h2{color:var(--hi)}
+details.sec>summary h2::after{content:" \25BE";color:var(--yl)}
+details.sec:not([open])>summary h2::after{content:" \25B8"}
+label{display:block;margin-top:10px;font-size:16px;color:var(--mu)}label b{float:right}
+input[type=range]{width:100%}
+select,input[type=number],input[type=text]{width:100%;background:#000;color:var(--hi);border:1px solid var(--bd);padding:5px 6px}
+select:hover,input[type=number]:hover,input[type=text]:hover,textarea:hover{border-color:var(--ac)}
+input[type=color]{width:100%;height:32px;background:#000;border:1px solid var(--bd);padding:2px;cursor:pointer}
+textarea{width:100%;height:64px;background:#000;color:var(--hi);border:1px solid var(--bd);padding:6px;font:15px/1.15 var(--f);resize:vertical}
+.row{display:flex;gap:8px}.row>div{flex:1}.row3{display:flex;gap:6px}.row3>div{flex:1}
+.chk{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:16px;color:var(--tx)}
+button{background:var(--ac);color:#000;border:1px solid var(--ac);padding:7px 12px;font:400 17px var(--f);letter-spacing:.04em;cursor:pointer;width:100%;margin-top:10px;box-shadow:3px 3px 0 #4a0000}
+button:hover:not(:disabled){background:#000;color:var(--ac)}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #4a0000}
+button.s{background:#000;color:var(--tx);border:1px solid var(--bd)}
+button.s:hover:not(:disabled){background:var(--bd);color:var(--hi);border-color:var(--ac)}
+button.sm{width:auto;margin:0;padding:4px 9px;font-size:16px}
+button:disabled{opacity:.4;cursor:default;box-shadow:none}
+small{color:var(--mu);font-size:15px;line-height:1.25}
+.tip{margin-top:8px;padding:7px 9px;border:1px solid var(--bd);border-left:4px solid var(--ac);background:#160000;font-size:16px;line-height:1.25}
+.ai{margin-top:10px;padding:7px 9px;border:1px dashed var(--yl);background:#1a1400;color:var(--yl);font-size:16px;line-height:1.25}
+.sub{display:none;margin-left:8px;padding-left:10px;border-left:2px dotted var(--ac)}
+#stats{font-size:17px;color:var(--mu);line-height:1.3;border:1px solid var(--bd);padding:6px 10px;background:var(--pn)}#stats:empty{display:none}#stats b{color:var(--hi)}.warn{color:#ff8a8a}
+#stage{display:flex;align-items:center;justify-content:center;background:#000;border:1px solid var(--ac);min-height:300px}
+#stage canvas{max-width:100%;max-height:100%}
 .ctl{display:flex;gap:10px;align-items:center}.ctl button{width:110px;margin:0}.ctl input{flex:1}
-small{color:var(--mu)}
-.ai{margin-top:8px;padding:7px 9px;border:1px solid #ff4d8d;border-radius:6px;background:#ff4d8d1a;color:#ff5c9a;font-size:12px;font-weight:700;line-height:1.4}
+canvas.map{width:100%;background:#000;border:1px solid var(--bd)}
+.leg span{display:inline-block;margin-right:14px;font-size:15px;color:var(--mu)}.leg i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border:1px solid #000}
 @media(max-width:760px){body{flex-direction:column}aside{width:auto;max-height:none;position:static}}
+@media(prefers-reduced-motion:reduce){button:active:not(:disabled){transform:none}}
+
 </style></head><body>
 <aside>
 <h1>3D Engine → Happy Wheels</h1>
-<small>Generates a level with a spinning 3D model. Try the cube first (small file).</small>
+<small>Generates a level (or just the groups) with a 3D model that spins. Everything is precomputed.</small>
 <div class="ai">⚠ This program was made by an AI for experimental purposes. Expect bugs of all kinds.</div>
+
+<details class="sec" open><summary><h2>1 · Model</h2></summary>
 <label>Model</label>
 <select id="model"><option value="tetera">Teapot</option><option value="cubo">Cube</option><option value="esfera">Faceted sphere</option><option value="toro">Torus (donut)</option><option value="obj">.obj file…</option></select>
 <input id="obj" type="file" accept=".obj" style="display:none;margin-top:6px;color:var(--mu)">
-<label>Mode</label>
-<select id="mode"><option value="control">Player-controlled (driving rotates the model)</option><option value="auto">Automatic (spins by itself)</option></select>
-<label>Art optimization</label>
-<select id="opt"><option value="mono">One art shape per shade (far fewer art shapes)</option><option value="faces">Classic (one art shape per face)</option></select>
-<div id="monoOpts"><label>Shades (art per frame) <b id="vH"></b></label><input id="shades" type="range" min="2" max="16" step="1" value="8">
-<label>Raster detail <b id="vR"></b></label><input id="rres" type="range" min="64" max="320" step="8" value="160">
-<label>Point budget per frame <b id="vB"></b></label><input id="pbud" type="range" min="100" max="4000" step="50" value="600">
-<small>More detail and points look better but can slow the game.</small></div>
-<label>Frames per turn <b id="vN"></b></label><input id="frames" type="range" min="8" max="72" step="1" value="24">
 <label>Model detail <b id="vD"></b></label><input id="detail" type="range" min="0.5" max="1.6" step="0.1" value="0.7">
-<label>Model size <b id="vS"></b></label><input id="size" type="range" min="100" max="300" step="10" value="220">
-<label>Tilt (view from above) <b id="vP"></b></label><input id="pitch" type="range" min="0" max="60" step="1" value="22">
-<label>Perspective (0 = none) <b id="vQ"></b></label><input id="persp" type="range" min="0" max="10" step="0.5" value="4">
-<div class="row"><div><label>Color</label><input id="color" type="color" value="#4a86d6"></div><div><label>Viewer background</label><input id="back" type="color" value="#1b1530"></div></div>
+<label>Model size in game <b id="vS"></b></label><input id="size" type="range" min="60" max="400" step="10" value="220">
+<label>Stretch X / Y / Z (negative = mirror)</label>
+<div class="row3"><div><input id="sx" type="number" step="0.1" value="1"></div><div><input id="sy" type="number" step="0.1" value="1"></div><div><input id="sz" type="number" step="0.1" value="1"></div></div>
+<div class="row"><div><label>Color</label><input id="color" type="color" value="#4a86d6"></div></div>
 <div class="chk"><input id="spec" type="checkbox" checked><span>Shine</span></div>
-<div class="chk"><input id="outline" type="checkbox" checked><span>Same-color outline (avoids lines between faces)</span></div>
-<div class="chk"><input id="fore" type="checkbox"><span>Draw the model in front of the vehicle</span></div>
-<div class="row"><div><label>Arena width</label><input id="arena" type="number" value="360"></div><div><label>Vehicle</label><select id="veh"><option value="1">Wheelchair</option><option value="2">Segway</option><option value="4">Shopping cart</option></select></div></div>
-<div id="autoOpts" style="display:none"><label>Seconds per frame <b id="vT"></b></label><input id="dt" type="range" min="0.05" max="0.3" step="0.01" value="0.1"></div>
-<details><summary>Advanced options</summary>
-<div class="row"><div><label>"Triggered by" player</label><input id="bp" type="number" value="1"></div><div><label>"Triggered by" timers</label><input id="bt" type="number" value="5"></div></div>
-<div class="row"><div><label>Zone repeat type</label><input id="rz" type="number" value="2"></div><div><label>Initial rotation (°)</label><input id="yaw0" type="number" value="20"></div></div>
-<div class="row"><div><label>"Change opacity" action (group)</label><input id="opa" type="number" value="1"></div><div><label>"Activate" action (trigger)</label><input id="tra" type="number" value="0"></div></div>
-<div class="row"><div><label>Position x</label><input id="cx" type="number" value="1000"></div><div><label>Floor height (y)</label><input id="floor" type="number" value="5400"></div></div>
+<div class="chk"><input id="outline" type="checkbox" checked><span>Same-color outline (classic method only; with one-shape-per-shade it would reveal the bridges)</span></div>
 <div class="chk"><input id="two" type="checkbox"><span>Draw both sides (if the .obj looks empty)</span></div>
 <div class="chk"><input id="flip" type="checkbox"><span>Flip faces (.obj)</span></div>
 </details>
+
+<details class="sec" open><summary><h2>2 · Spin &amp; view</h2></summary>
+<label>Spin axis (orientation of the rotation)</label>
+<select id="axisSel">
+<option value="0,1,0">Vertical (turntable)</option>
+<option value="1,0,0">Horizontal (tumbling forward/back)</option>
+<option value="0,0,1">Facing you (rolling like a wheel)</option>
+<option value="1,1,0">Diagonal ↗ (vertical + horizontal)</option>
+<option value="-1,1,0">Diagonal ↖ (vertical + horizontal)</option>
+<option value="0,1,1">Diagonal (vertical + roll)</option>
+<option value="1,1,1">3D diagonal</option>
+<option value="custom">Custom axis…</option></select>
+<div id="customAxis" class="sub"><div class="row3"><div><label>x</label><input id="ax" type="number" step="0.1" value="0"></div><div><label>y</label><input id="ay" type="number" step="0.1" value="1"></div><div><label>z</label><input id="az" type="number" step="0.1" value="0"></div></div></div>
+<label>Spin direction</label>
+<select id="dirSel"><option value="1">Forward</option><option value="-1">Reverse</option></select>
+<small id="dirNote"></small>
+<label>View tilt (+ from above, − from below) <b id="vP"></b></label><input id="pitch" type="range" min="-90" max="90" step="1" value="22">
+<div class="row"><button class="s sm" data-pitch="0" style="margin-top:6px">Front</button><button class="s sm" data-pitch="35" style="margin-top:6px">From above</button><button class="s sm" data-pitch="-35" style="margin-top:6px">From below</button><button class="s sm" data-pitch="90" style="margin-top:6px">Top view</button></div>
+<label>Perspective (0 = none) <b id="vQ"></b></label><input id="persp" type="range" min="0" max="10" step="0.5" value="4">
+<label>Starting orientation of the model (yaw / pitch / roll °)</label>
+<div class="row3"><div><input id="yaw0" type="number" value="20"></div><div><input id="pitch0" type="number" value="0"></div><div><input id="roll0" type="number" value="0"></div></div>
+<label>Frames per cycle <b id="vN"></b></label><input id="frames" type="range" min="8" max="72" step="1" value="24">
+<label>Angle swept per cycle (°) <b id="vW"></b></label><input id="sweep" type="range" min="10" max="360" step="5" value="360">
+<div class="chk"><input id="pingpong" type="checkbox"><span>Ping-pong (go and come back instead of jumping to the start)</span></div>
+</details>
+
+<details class="sec" open><summary><h2>3 · Playback (start / end)</h2></summary>
+<label>Who moves the model</label>
+<select id="mode">
+<option value="timer">It spins by itself (timers)</option>
+<option value="control">The player drives past it (position = frame)</option>
+<option value="manual">Frames only, no triggers (I will wire my own)</option></select>
+
+<div id="ctlOpts" class="sub">
+<label>Arena width <b></b></label><input id="arena" type="number" value="360">
+<label>Turns across the arena</label><input id="turnsAcross" type="number" step="0.5" min="0.5" value="1">
+<div class="row"><div><label>Zone y offset</label><input id="zoneDY" type="number" value="-18"></div><div><label>Zone height</label><input id="zoneH" type="number" value="300"></div></div>
+</div>
+
+<div id="timerOpts" class="sub">
+<label>Seconds per cycle <b id="vT"></b></label><input id="turnSec" type="range" min="0.5" max="30" step="0.5" value="2.5">
+<label>Starts…</label>
+<select id="sType"><option value="auto">Automatically when the level starts</option><option value="player">When the player enters a zone I place</option><option value="click">When the player clicks a button</option><option value="trigger">When another trigger of mine activates it</option></select>
+<div id="sZone" class="sub"><small>Start trigger position relative to the model centre:</small>
+<div class="row"><div><label>x</label><input id="sdx" type="number" value="0"></div><div><label>y</label><input id="sdy" type="number" value="72"></div></div>
+<div class="row"><div><label>width</label><input id="sw" type="number" value="120"></div><div><label>height</label><input id="sh" type="number" value="100"></div></div>
+<div class="chk"><input id="sBtn" type="checkbox" checked><span>Draw a play button (click type)</span></div>
+<div class="chk"><input id="sAgain" type="checkbox"><span>Can be triggered again (restart)</span></div></div>
+<label>Ends…</label>
+<select id="eType"><option value="loop">Never (loops forever)</option><option value="turns">After a number of cycles</option><option value="stop">When a stop trigger fires</option></select>
+<div id="eTurnsBox" class="sub"><label>Number of cycles</label><input id="eTurns" type="number" min="1" value="3"><small>Uses a single timer trigger (no extra chain). If it stops too early/late after many cycles, correct it here:</small><div class="chk"><input id="snap" type="checkbox" checked><span>Snap step time to game ticks (30/s) so the cycle length is exact</span></div>
+<label>Timer correction (%)</label><input id="eCorr" type="number" step="0.5" value="0"></div>
+<div id="eAfterBox" class="sub"><label>After it ends</label><select id="eAfter"><option value="hold">Stay on the last frame</option><option value="reset">Go back to the first frame</option></select></div>
+<div id="stopBox" class="sub"><label>Stop trigger fires when</label>
+<select id="pType"><option value="player">The player enters a zone I place</option><option value="click">The player clicks a button</option><option value="trigger">Another trigger of mine activates it</option></select>
+<div class="row"><div><label>x</label><input id="pdx" type="number" value="150"></div><div><label>y</label><input id="pdy" type="number" value="72"></div></div>
+<div class="row"><div><label>width</label><input id="pw" type="number" value="120"></div><div><label>height</label><input id="ph" type="number" value="100"></div></div>
+<div class="chk"><input id="pBtn" type="checkbox" checked><span>Draw a stop button (click type)</span></div>
+<small>Uses the “Deactivate” trigger action (number in Advanced; unverified).</small></div>
+</div>
+</details>
+
+<details class="sec"><summary><h2>4 · Scene (what else is added)</h2></summary>
+<div class="row"><button class="s sm" id="presetDemo" style="margin-top:8px">Full demo level</button><button class="s sm" id="presetOnly" style="margin-top:8px">Only the 3D model</button></div>
+<div class="chk"><input id="sFloor" type="checkbox" checked><span>Floor</span></div>
+<div class="chk"><input id="sWalls" type="checkbox" checked><span>Side walls</span></div>
+<div class="chk"><input id="sStripe" type="checkbox" checked><span>Yellow floor stripe</span></div>
+<div class="chk"><input id="sBack" type="checkbox" checked><span>Viewer background panel behind the model</span></div>
+<div class="chk"><input id="sTxt" type="checkbox" checked><span>Instruction text</span></div>
+<input id="sTxtVal" type="text" value="" placeholder="auto text" style="margin-top:6px">
+<div class="chk"><input id="labels" type="checkbox" checked><span>Small trigger labels (visible in game)</span></div>
+<div class="chk"><input id="fore" type="checkbox"><span>Draw the model in front of the vehicle</span></div>
+<div class="row"><div><label>Panel colour</label><input id="back" type="color" value="#1b1530"></div><div><label>Vehicle (new level)</label><select id="veh"><option value="1">Wheelchair</option><option value="2">Segway</option><option value="4">Shopping cart</option></select></div></div>
+</details>
+
+<details class="sec"><summary><h2>5 · Light</h2></summary>
+<label>Light direction (horizontal) <b id="vLa"></b></label><input id="lightAz" type="range" min="-180" max="180" value="-36">
+<label>Light height <b id="vLe"></b></label><input id="lightEl" type="range" min="-80" max="89" value="40">
+<label>Ambient light <b id="vAm"></b></label><input id="ambient" type="range" min="0" max="0.8" step="0.02" value="0.22">
+</details>
+
+<details class="sec"><summary><h2>6 · Art optimization</h2></summary>
+<select id="opt"><option value="mono">One art shape per shade (far fewer art shapes)</option><option value="faces">Classic (one art shape per face)</option></select>
+<div id="monoOpts"><label>Shades (art per frame) <b id="vH"></b></label><input id="shades" type="range" min="2" max="16" value="8">
+<label>Raster detail <b id="vR"></b></label><input id="rres" type="range" min="64" max="320" step="8" value="160">
+<label>Point budget per frame <b id="vB"></b></label><input id="pbud" type="range" min="100" max="4000" step="50" value="600"></div>
+</details>
+
+<details class="sec" open><summary><h2>7 · Position &amp; level</h2></summary>
 <label>Current level (optional) <b id="lvS"></b></label>
-<textarea id="lvl" style="width:100%;height:70px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px;font:11px monospace;resize:vertical" placeholder="Paste your level data here and the 3D model is added to it"></textarea>
+<textarea id="lvl" placeholder="Paste your level data here and the 3D model is added to it"></textarea>
+<div class="row"><div><label>Model centre x</label><input id="cx" type="number" value="1000"></div><div><label>Model centre y</label><input id="cy" type="number" value="5268"></div></div>
+</details>
+
+<details class="sec"><summary><h2>Advanced</h2></summary>
+<div class="row"><div><label>"Triggered by" player</label><input id="bp" type="number" value="1"></div><div><label>"Triggered by" click</label><input id="bk" type="number" value="6"></div></div>
+<div class="row"><div><label>"Triggered by" trigger-only</label><input id="bt" type="number" value="5"></div><div><label>Zone repeat type</label><input id="rz" type="number" value="2"></div></div>
+<div class="row"><div><label>Chain repeat type</label><input id="rch" type="number" value="2"></div><div><label>"Change opacity" action</label><input id="opa" type="number" value="1"></div></div>
+<div class="row"><div><label>"Activate" action</label><input id="tra" type="number" value="0"></div><div><label>"Deactivate" action</label><input id="dea" type="number" value="1"></div></div>
+</details>
 <button id="copy">Copy level data</button>
 <button id="dl" class="s">Download .txt</button>
 </aside>
@@ -67,6 +184,9 @@ small{color:var(--mu)}
 <div id="stats"></div>
 <div id="stage"><canvas id="cv" width="640" height="420"></canvas></div>
 <div class="ctl"><button id="play" class="s">▶ Spin</button><input id="fr" type="range" min="0" max="23" value="0"><small id="frl"></small></div>
+<b style="font-size:17px">Trigger / object layout in the game</b>
+<canvas id="map" class="map" width="1200" height="420"></canvas>
+<div class="leg" id="mapLeg"></div>
 </main>
 <script>
 /* HWCore: imagen -> level data de Happy Wheels (formas de arte sh t="4").
@@ -496,9 +616,9 @@ const HWCore = (function () {
   }
   function w_h_guess(loops) { let mx = 0, my = 0; for (const L of loops) for (const p of L) { if (p[0] > mx) mx = p[0]; if (p[1] > my) my = p[1]; } return mx * my; }
 
-  function buildMono(labels, w, h, eps, smooth, K) {
+  function buildMono(labels, w, h, eps, smooth, K, c0) {
     const shapes = [];
-    for (let c = 1; c < K; c++) {
+    for (let c = (c0 === undefined ? 1 : c0); c < K; c++) {
       const mask = new Uint8Array(w * h); let any = 0;
       for (let p = 0; p < w * h; p++) if (labels[p] === c) { mask[p] = 1; any = 1; }
       if (!any) continue;
@@ -514,8 +634,8 @@ const HWCore = (function () {
   const monoPoints = (shapes) => 4 + shapes.reduce((a, s) => a + s.pts.length, 0);
 
   // bisection of detail so that total points <= budget
-  function fitMono(labels0, w, h, budget, smooth, K) {
-    const run = (t) => buildMono(cleanSmall(labels0, w, h, 2 + (1 - t) * 60), w, h, 0.4 + (1 - t) * 2.2, smooth, K);
+  function fitMono(labels0, w, h, budget, smooth, K, c0) {
+    const run = (t) => buildMono(cleanSmall(labels0, w, h, 2 + (1 - t) * 60), w, h, 0.4 + (1 - t) * 2.2, smooth, K, c0);
     let best = run(0), bt = 0;
     if (monoPoints(best) > budget) return { shapes: best, t: 0, ok: false };
     const top = run(1);
@@ -527,17 +647,54 @@ const HWCore = (function () {
 
   /* o: {colors,pointBudget,blur,smooth,viewW,viewH,cellW,cellH,x,y,idBase} */
   function convertMono(rgba, w, h, o) {
-    const { labels, pal } = quantizeLab(rgba, w, h, o.colors, o.blur, 1), K = pal.length;
-    const { shapes, t, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K);
+    // o.cutAlpha: transparent pixels (alpha < 128) get no art at all (PNG without background)
+    let src = rgba, voidN = 0;
+    if (o.cutAlpha) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let p = 0; p < w * h; p++) if (rgba[p * 4 + 3] >= 128) { r += rgba[p * 4]; g += rgba[p * 4 + 1]; b += rgba[p * 4 + 2]; n++; } else voidN++;
+      if (voidN && n) { src = new Uint8ClampedArray(rgba); r = r / n | 0; g = g / n | 0; b = b / n | 0;
+        for (let p = 0; p < w * h; p++) if (src[p * 4 + 3] < 128) { src[p * 4] = r; src[p * 4 + 1] = g; src[p * 4 + 2] = b; } src = Uint8ClampedArray.from(src); for (let p = 0; p < w * h; p++) src[p * 4 + 3] = 255; }
+      else voidN = 0;
+    }
+    const Q = quantizeLab(src, w, h, o.colors, o.blur, 1), pal = Q.pal, K = pal.length, labels = Q.labels;
+    if (voidN) for (let p = 0; p < w * h; p++) if (rgba[p * 4 + 3] < 128) labels[p] = K;   // label K = no art
+    const { shapes, t, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K, voidN ? 0 : 1);
     const unit = Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0, fw = w * unit, fh = h * unit;
     const X = o.x + (o.cellW ? (o.cellW - fw) / 2 : 0), Y = o.y + (o.cellH ? (o.cellH - fh) / 2 : 0);
     const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);   // same array objects -> bridge vertices stay identical
-    const xs = [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)];
-    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + 1, X, Y)));
+    const xs = voidN ? [] : [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)], off = voidN ? 0 : 1;
+    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + off, X, Y)));
     const gx = r1(X + fw / 2), gy = r1(Y + fh / 2);
     const group = `<g x="${gx}" y="${gy}" r="0" ox="${-gx}" oy="${-gy}" s="f" f="f" o="100" im="f" fr="f">\n${xs.join('\n')}\n</g>`;
-    const polys = [{ c: 0, pts: [[0, 0], [w, 0], [w, h], [0, h]] }].concat(shapes);
-    return { group, X, Y, polys, pal, w, h, t, ok, count: xs.length, points: monoPoints(shapes), fw: Math.round(fw), fh: Math.round(fh), unit, mono: true, colors: K };
+    const polys = (voidN ? [] : [{ c: 0, pts: [[0, 0], [w, 0], [w, h], [0, h]] }]).concat(shapes);
+    return { group, X, Y, polys, pal, w, h, t, ok, count: xs.length, cut: !!voidN, points: monoPoints(shapes), fw: Math.round(fw), fh: Math.round(fh), unit, mono: true, colors: K };
+  }
+
+
+  // ---------- video: one shared palette for all frames (no color flicker) ----------
+  function buildPalette(frames, w, h, K, blur) {
+    const big = new Uint8ClampedArray(frames.length * w * h * 4);
+    frames.forEach((f, i) => big.set(f, i * w * h * 4));
+    return quantizeLab(big, w, h * frames.length, K, blur, 1).pal;
+  }
+  function labelPal(rgba, w, h, pal, blur) {
+    const src = bilateral(rgba, w, h, blur), n = w * h, pl = pal.map((c) => rgb2lab(c[0], c[1], c[2])), lb = new Uint8Array(n);
+    for (let p = 0; p < n; p++) {
+      const L = rgb2lab(src[p * 4], src[p * 4 + 1], src[p * 4 + 2]); let best = 0, bd = Infinity;
+      for (let k = 0; k < pl.length; k++) { const a = L[0] - pl[k][0], b = L[1] - pl[k][1], c = L[2] - pl[k][2], d = a * a + b * b + c * c; if (d < bd) { bd = d; best = k; } }
+      lb[p] = best;
+    }
+    return lb;
+  }
+  /* o: {pointBudget,blur,smooth,viewW,viewH,x,y,idBase}; returns art shapes as xml strings (no group wrapper) */
+  function convertFramePal(rgba, w, h, pal, o) {
+    const labels = labelPal(rgba, w, h, pal, o.blur), K = pal.length;
+    const { shapes, ok } = fitMono(labels, w, h, o.pointBudget, o.smooth, K);
+    const unit = o.unit || Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0, fw = w * unit, fh = h * unit, X = o.x, Y = o.y;
+    const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);
+    const xs = [artXml(S([[0, 0], [w, 0], [w, h], [0, h]]), pack(pal[0]), base, X, Y)];
+    shapes.forEach((s, i) => xs.push(artXml(S(s.pts), pack(pal[s.c]), base + i + 1, X, Y)));
+    return { xs, ok, points: monoPoints(shapes), fw, fh, shapes, unit };
   }
 
   // ---------- nivel existente ----------
@@ -570,7 +727,7 @@ const HWCore = (function () {
     return `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${Math.max(50, Math.round(x))}" y="${Math.round(y)}" c="1" f="f" h="f" bg="0" bgc="16777215" e="1"/>\n    <groups>\n${groups.split('\n').map((l) => '        ' + l).join('\n')}\n    </groups>\n</levelXML>\n`;
   }
 
-  return { convert, convertMono, fitMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
+  return { artXml, buildPalette, labelPal, convertFramePal, convert, convertMono, fitMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
 })();
 if (typeof module !== 'undefined') module.exports = HWCore;
 
@@ -706,26 +863,43 @@ const HW3D = (function () {
   // ------------------------------------------------------------------ render
   const hex = (c) => (c[0] << 16) | (c[1] << 8) | c[2];
   const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
-  /* o: {frames,pitch,yaw0,persp,color:[r,g,b],spec,flip,twoSided,outline} -> {frames:[{polys:[{pts,color}]}],extent} */
+  /* o: {frames,sweep,axis,dir,yaw0,pitch0,roll0,pitch,persp,scale:[sx,sy,sz],lightAz,lightEl,ambient,color,partColors,spec,flip,twoSided}
+       -> {frames:[{polys:[{pts,color,z}]}],extent,closed} */
+  const rodrigues = (v, a, t) => { const c = Math.cos(t), s = Math.sin(t), d = V.dot(a, v) * (1 - c), x = V.cross(a, v); return [v[0] * c + x[0] * s + a[0] * d, v[1] * c + x[1] * s + a[1] * d, v[2] * c + x[2] * s + a[2] * d]; };
   function renderFrames(model, o) {
-    const N = o.frames, pit = (o.pitch * Math.PI) / 180, cp = Math.cos(pit), sp = Math.sin(pit);
-    const D = o.persp > 0 ? o.persp : 0, L = V.norm([-0.45, 0.65, 0.62]);
+    const RAD = Math.PI / 180, N = o.frames, pit = (o.pitch || 0) * RAD, cp = Math.cos(pit), sp = Math.sin(pit);
+    const D = o.persp > 0 ? o.persp : 0;
+    const az = (o.lightAz === undefined ? -36 : o.lightAz) * RAD, el = (o.lightEl === undefined ? 40 : o.lightEl) * RAD;
+    const L = V.norm([Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)]);
+    const amb = o.ambient === undefined ? 0.22 : o.ambient;
+    const axis = V.norm(o.axis && V.len(o.axis) > 1e-6 ? o.axis : [0, 1, 0]), dir = o.dir < 0 ? -1 : 1;
+    const sweep = o.sweep || 360, closed = sweep >= 359.99;
+    const S = o.scale || [1, 1, 1], mirror = S[0] * S[1] * S[2] < 0;
+    const r0 = (q) => {  // model orientation: roll (z), pitch (x), yaw (y)
+      let [x, y, z] = [q[0] * S[0], q[1] * S[1], q[2] * S[2]];
+      const rz = (o.roll0 || 0) * RAD, rx = (o.pitch0 || 0) * RAD, ry = (o.yaw0 || 0) * RAD;
+      [x, y] = [x * Math.cos(rz) - y * Math.sin(rz), x * Math.sin(rz) + y * Math.cos(rz)];
+      [y, z] = [y * Math.cos(rx) - z * Math.sin(rx), y * Math.sin(rx) + z * Math.cos(rx)];
+      [x, z] = [x * Math.cos(ry) + z * Math.sin(ry), -x * Math.sin(ry) + z * Math.cos(ry)];
+      return [x, y, z];
+    };
+    const base = model.faces.map((f) => ({ p: f.p.map(r0), part: f.part }));
     const frames = []; let ext = 0;
     for (let k = 0; k < N; k++) {
-      const th = ((o.yaw0 || 0) * Math.PI) / 180 + (k / N) * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
-      const rot = (q) => { const x = q[0] * c + q[2] * s, z = -q[0] * s + q[2] * c; return [x, q[1] * cp - z * sp, q[1] * sp + z * cp]; };
+      const th = dir * sweep * RAD * (closed ? k / N : (N > 1 ? k / (N - 1) : 0));
+      const rot = (q) => { const r = Math.abs(th) > 1e-9 ? rodrigues(q, axis, th) : q; return [r[0], r[1] * cp - r[2] * sp, r[1] * sp + r[2] * cp]; };
       const out = [];
-      for (const f of model.faces) {
-        let P = f.p.map(rot); if (o.flip) P = P.slice().reverse();
+      for (const f of base) {
+        let P = f.p.map(rot); if (o.flip !== mirror) P = P.slice().reverse();
         const n = newell(P), m = V.mul(P.reduce((a, b) => V.add(a, b), [0, 0, 0]), 1 / P.length);
         const toEye = D ? V.sub([0, 0, D], m) : [0, 0, 1];
-        let facing = V.dot(n, toEye) > 0;
+        const facing = V.dot(n, toEye) > 0;
         if (!facing && !o.twoSided) continue;
         const nn = facing ? n : V.mul(n, -1);
         const diff = Math.max(0, V.dot(nn, L)), r = V.sub(V.mul(nn, 2 * V.dot(nn, L)), L);
-        const spec = o.spec ? Math.pow(Math.max(0, r[2]), 24) * 0.55 : 0, ia = 0.22 + 0.82 * diff;
-        const base = (o.partColors && o.partColors[f.part]) || o.color;
-        const col = [clamp(base[0] * ia + 255 * spec), clamp(base[1] * ia + 255 * spec), clamp(base[2] * ia + 255 * spec)];
+        const spec = o.spec ? Math.pow(Math.max(0, r[2]), 24) * 0.55 : 0, ia = amb + (1.04 - amb) * diff;
+        const bc = (o.partColors && o.partColors[f.part]) || o.color;
+        const col = [clamp(bc[0] * ia + 255 * spec), clamp(bc[1] * ia + 255 * spec), clamp(bc[2] * ia + 255 * spec)];
         const pts = P.map((q) => { const sc = D ? D / (D - q[2]) : 1; return [q[0] * sc, -q[1] * sc]; });
         for (const q of pts) ext = Math.max(ext, Math.abs(q[0]), Math.abs(q[1]));
         out.push({ pts, z: m[2], color: col });
@@ -733,9 +907,8 @@ const HW3D = (function () {
       out.sort((a, b) => a.z - b.z);
       frames.push({ polys: out });
     }
-    return { frames, extent: ext };
+    return { frames, extent: ext, closed };
   }
-
 
   // ---- "one art shape per shade" mode: rasterize each frame to a shade-label map and trace one polygon per shade ----
   function shadePalette(rf, K) {
@@ -789,76 +962,131 @@ const HW3D = (function () {
   }
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-  /* p: opciones del nivel. Devuelve {xml, stats, frames, scale, ...} */
+  /* p: level options. Returns {xml, pieces, art, lay, ...} */
   function build(model, p) {
     const N = p.frames, rf = renderFrames(model, p), scale = (p.size / 2) / (rf.extent || 1);
-    const cx = p.cx, floor = p.floor, my = floor - p.height;   // centro del modelo
+    const cx = p.cx, my = p.cy, floor = my + p.height;
     let id = p.idBase || 0, art = 0, faces = 0; const GB = p.groupBase || 0, TB = p.trigBase || 0;
     let mf = null; if (p.mono) mf = monoFrames(rf, { shades: p.shades || 8, rasterRes: p.rasterRes || 160, pointBudget: p.pointBudget || 600, smooth: p.smooth === undefined ? 1 : p.smooth });
+    const shSh = (A) => `<sh t="4" i="f" p0="${r1(A.cx)}" p1="${r1(A.cy)}" p2="${A.w}" p3="${A.h}" p4="0" p5="f" p6="f" p7="1" p8="${A.color}" p9="${A.outline}" p10="100" p11="1"><v f="t" id="${A.id}" n="${A.n}" ${A.vs}/></sh>`;
     const groups = rf.frames.map((fr, k) => {
       const sh = [];
       if (mf) {
-        const u = p.size / mf.R * (rf.extent ? 1 : 1), kx = (p.size / 2) / 1, gk = (2 * mf.ext * scale) / mf.R;
+        const gk = (2 * mf.ext * scale) / mf.R;
         for (const s of mf.frames[k].shapes) {
           const pts = s.pts.map((t) => [cx + (t[0] - mf.R / 2) * gk, my + (t[1] - mf.R / 2) * gk]);
-          const A = artXml(pts, hex(mf.pal[s.c - 1]), p.outline ? hex(mf.pal[s.c - 1]) : -1, id++);
-          if (A.n < 3) continue;
-          sh.push(`<sh t="4" i="f" p0="${r1(A.cx)}" p1="${r1(A.cy)}" p2="${A.w}" p3="${A.h}" p4="0" p5="f" p6="f" p7="1" p8="${A.color}" p9="${A.outline}" p10="100" p11="1"><v f="t" id="${A.id}" n="${A.n}" ${A.vs}/></sh>`);
+          const A = artXml(pts, hex(mf.pal[s.c - 1]), -1, id++);
+          if (A.n >= 3) sh.push(shSh(A));
         }
-        faces += sh.length; art += sh.length;
-        return `<g x="${r1(cx)}" y="${r1(my)}" r="0" ox="${-r1(cx)}" oy="${-r1(my)}" s="f" f="${p.foreground ? 't' : 'f'}" o="${k === 0 ? 100 : 0}" im="f" fr="f">\n${sh.join('\n')}\n</g>`;
-      }
-      for (const q of fr.polys) {
-        const pts = q.pts.map((t) => [cx + t[0] * scale, my + t[1] * scale]);
-        const A = artXml(pts, hex(q.color), p.outline ? hex(q.color) : -1, id++);
-        if (A.n < 3) continue;
-        sh.push(`<sh t="4" i="f" p0="${r1(A.cx)}" p1="${r1(A.cy)}" p2="${A.w}" p3="${A.h}" p4="0" p5="f" p6="f" p7="1" p8="${A.color}" p9="${A.outline}" p10="100" p11="1"><v f="t" id="${A.id}" n="${A.n}" ${A.vs}/></sh>`);
+      } else {
+        for (const q of fr.polys) {
+          const pts = q.pts.map((t) => [cx + t[0] * scale, my + t[1] * scale]);
+          const A = artXml(pts, hex(q.color), p.outline ? hex(q.color) : -1, id++);
+          if (A.n >= 3) sh.push(shSh(A));
+        }
       }
       faces += sh.length; art += sh.length;
-      const op = k === 0 ? 100 : 0;
-      return `<g x="${r1(cx)}" y="${r1(my)}" r="0" ox="${-r1(cx)}" oy="${-r1(my)}" s="f" f="${p.foreground ? 't' : 'f'}" o="${op}" im="f" fr="f">\n${sh.join('\n')}\n</g>`;
+      return `<g x="${r1(cx)}" y="${r1(my)}" r="0" ox="${-r1(cx)}" oy="${-r1(my)}" s="f" f="${p.foreground ? 't' : 'f'}" o="${k === 0 ? 100 : 0}" im="f" fr="f">\n${sh.join('\n')}\n</g>`;
     });
+    const gidx = (i) => GB + i;
 
-    // ----- escenario -----
-    const shapes = [], specials = [], WW = p.arenaW, wallH = 700, th = 300;
-    const rect = (x, y, w, h, col, inter, op) => { shapes.push(`<sh t="0"${inter ? '' : ' i="f"'} p0="${r1(x)}" p1="${r1(y)}" p2="${Math.round(w)}" p3="${Math.round(h)}" p4="0" p5="t" p6="f" p7="1" p8="${col}" p9="-1" p10="${op || 100}" p11="1"/>`); if (!inter) art++; };
-    rect(cx, floor + th / 2, WW + 120, th, 0x3a2a63, true);                       // piso
-    rect(cx - WW / 2 - 40, floor - wallH / 2 + 10, 40, wallH, 0x3a2a63, true);    // paredes
-    rect(cx + WW / 2 + 40, floor - wallH / 2 + 10, 40, wallH, 0x3a2a63, true);
-    rect(cx, my, p.size * 1.35, p.size * 1.35, p.backColor === undefined ? 0x1b1530 : p.backColor, false, 100);             // fondo del visor
-    rect(cx, floor - 3, WW, 6, 0xffc424, false, 100);                              // franja del piso
-    const txt = (x, y, s, size, col) => specials.push(`<sp t="16" p0="${r1(x)}" p1="${r1(y)}" p2="0" p3="${col}" p4="2" p5="${size}" p6="1" p8="100"><p7><![CDATA[${esc(s)}]]></p7></sp>`);
-    txt(cx - 130, floor - 50, p.mode === 'control' ? 'Move the vehicle left and right to rotate the model' : 'Spinning 3D model', 12, 0xece8f5);
+    // ----- frame sequence of one cycle -----
+    const pp = !!p.pingpong && N > 2, seq = Array.from({ length: N }, (_, i) => i);
+    if (pp) for (let i = N - 2; i >= 1; i--) seq.push(i);
+    const Lc = seq.length, closedCycle = rf.closed || pp;
+
+    // ----- helpers -----
+    const sc = p.scene || {}, shapes = [], specials = [], lay = [], trig = [];
+    const rect = (x, y, w, h, col, inter) => shapes.push(`<sh t="0"${inter ? '' : ' i="f"'} p0="${r1(x)}" p1="${r1(y)}" p2="${Math.round(w)}" p3="${Math.round(h)}" p4="0" p5="t" p6="f" p7="1" p8="${col}" p9="-1" p10="100" p11="1"/>`);
+    const txt = (x, y, s, size, col) => { if (p.labels) specials.push(`<sp t="16" p0="${r1(x)}" p1="${r1(y)}" p2="0" p3="${col}" p4="2" p5="${size}" p6="1" p8="100"><p7><![CDATA[${esc(s)}]]></p7></sp>`); };
+    const OP = p.opAct === undefined ? 1 : p.opAct, TA = p.trigAct === undefined ? 0 : p.trigAct, DEA = p.deaAct === undefined ? 1 : p.deaAct;
+    const gop = (i, o) => `<g i="${i}"><a i="${OP}" p0="${o}" p1="0"/></g>`, tact = (i) => `<t i="${i}"><a i="${TA}"/></t>`, tdea = (i) => `<t i="${i}"><a i="${DEA}"/></t>`;
+    const T = (x, y, w, h, b, r, d, body, kind, label) => { trig.push(`<t x="${r1(x)}" y="${r1(y)}" w="${Math.round(w)}" h="${Math.round(h)}" a="0" b="${b}" t="1" r="${r}" sd="f" d="${d}">\n${body.join('\n')}\n</t>`); lay.push({ k: kind, x: x - w / 2, y: y - h / 2, w, h, l: label }); };
+    const triShape = (x, y, s, dir) => artXml(dir > 0 ? [[x - s * .4, y - s * .6], [x + s * .6, y], [x - s * .4, y + s * .6]] : [[x - s * .6, y - s * .6], [x + s * .6, y - s * .6], [x + s * .6, y + s * .6], [x - s * .6, y + s * .6]], 0xffffff, -1, id++);
+    const btnGroup = (x, y, w, h, col, icon) => {
+      const sh = [`<sh t="0" i="f" p0="${r1(x)}" p1="${r1(y)}" p2="${Math.round(w)}" p3="${Math.round(h)}" p4="0" p5="t" p6="f" p7="1" p8="${col}" p9="-1" p10="100" p11="1"/>`, shSh(triShape(x, y, Math.min(w, h) * 0.5, icon === 'play' ? 1 : -1))];
+      art += sh.length; groups.push(`<g x="${r1(x)}" y="${r1(y)}" r="0" ox="${-r1(x)}" oy="${-r1(y)}" s="f" f="f" o="100" im="f" fr="f">\n${sh.join('\n')}\n</g>`);
+    };
+
+    // ----- scene -----
+    const WW = p.arenaW, wallH = 700, th = 300;
+    if (sc.back) { rect(cx, my, p.size * 1.35, p.size * 1.35, p.backColor === undefined ? 0x1b1530 : p.backColor, false); art++; lay.push({ k: 'model', x: cx - p.size * .675, y: my - p.size * .675, w: p.size * 1.35, h: p.size * 1.35, l: '3D model' }); }
+    else lay.push({ k: 'model', x: cx - p.size / 2, y: my - p.size / 2, w: p.size, h: p.size, l: '3D model' });
+    if (sc.floor) {
+      rect(cx, floor + th / 2, WW + 120, th, 0x3a2a63, true); lay.push({ k: 'floor', x: cx - WW / 2 - 60, y: floor, w: WW + 120, h: 14, l: 'floor' });
+      if (sc.walls) { rect(cx - WW / 2 - 40, floor - wallH / 2 + 10, 40, wallH, 0x3a2a63, true); rect(cx + WW / 2 + 40, floor - wallH / 2 + 10, 40, wallH, 0x3a2a63, true); }
+      if (sc.stripe) { rect(cx, floor - 3, WW, 6, 0xffc424, false); art++; }
+    }
+    if (sc.text) { specials.push(`<sp t="16" p0="${r1(cx - 130)}" p1="${r1(floor - 50)}" p2="0" p3="${0xece8f5}" p4="2" p5="12" p6="1" p8="100"><p7><![CDATA[${esc(sc.text)}]]></p7></sp>`); }
 
     // ----- triggers -----
-    const trig = [], T = (a, body) => trig.push(`<t x="${r1(a.x)}" y="${r1(a.y)}" w="${a.w}" h="${a.h}" a="0" b="${a.b}" t="1" r="${a.r}" sd="f"${a.i ? ` i="${a.i}"` : ''} d="${a.d}">\n${body.join('\n')}\n</t>`);
-    const OP = p.opAct === undefined ? 1 : p.opAct, TA = p.trigAct === undefined ? 0 : p.trigAct;
-    const gop = (i, o) => `<g i="${i}"><a i="${OP}" p0="${o}" p1="0"/></g>`, tact = (i) => `<t i="${i}"><a i="${TA}"/></t>`;
-    const left = cx - WW / 2, zw = WW / N;
-    if (p.mode === 'control') {
-      for (let k = 0; k < N; k++) {
-        const body = []; for (let j = 0; j < N; j++) body.push(gop(j + GB, j === k ? 100 : 0));
-        T({ x: left + zw * (k + 0.5), y: floor - 150, w: Math.max(5, Math.ceil(zw)), h: 300, b: p.bPlayer, r: p.rZone, i: 0, d: 0 }, body);
+    const mode = p.mode || 'timer', bPlayer = p.bPlayer === undefined ? 1 : p.bPlayer, bClick = p.bClick === undefined ? 6 : p.bClick, bTrig = p.bTimer === undefined ? 5 : p.bTimer;
+    const spawn = p.spawn || [mode === 'control' ? cx - WW / 2 + 40 : cx - 150, floor - 60];
+    let chainN = 0, timing = null;
+    if (mode === 'control') {
+      const Zn = Math.max(1, Math.round(Lc * (p.turnsAcross || 1))), zw = WW / Zn, zy = my + (p.zoneDY === undefined ? p.height - 150 : p.zoneDY), zh = p.zoneH || 300;
+      for (let j = 0; j < Zn; j++) {
+        const fr = seq[j % Lc], body = []; for (let i = 0; i < N; i++) body.push(gop(gidx(i), i === fr ? 100 : 0));
+        T(cx - WW / 2 + zw * (j + 0.5), zy, Math.max(5, Math.ceil(zw)), zh, bPlayer, p.rZone === undefined ? 2 : p.rZone, 0, body, 'zone', 'zone ' + j);
       }
-    } else {
-      // 0: arranque (jugador) | 1..N: cadena de retrasos | N+1..2N: temporizadores
-      T({ x: cx, y: floor - 150, w: WW, h: 300, b: p.bPlayer, r: 1, i: 0, d: 0 }, [tact(1 + TB)]);
-      for (let k = 0; k < N; k++) {
-        const body = [tact(N + 1 + k + TB)]; if (k < N - 1) body.push(tact(2 + k + TB));
-        T({ x: 150 + k * 3, y: 200, w: 40, h: 40, b: p.bTimer, r: 1, i: 0, d: k === 0 ? 0 : p.dt }, body);
+      txt(cx, zy + zh / 2 + 18, 'ROTATION ZONES: ' + Zn + ' (the player\'s x position picks the frame)', 9, 0x7aa8ff);
+    } else if (mode === 'timer') {
+      const st = p.start || {}, en = p.end || { type: 'loop' }, stp = p.stop || {};
+      const hasStop = en.type === 'stop' || en.type === 'turns', TK = p.tickRate || 30;
+      // ---- timing: derived here from the REAL number of steps (seq), never from the UI
+      const wantDt = p.cycleSec ? p.cycleSec / Lc : (p.dt || 0.1), snap = p.snap !== false;
+      const ticks = snap ? Math.max(1, Math.round(wantDt * TK)) : null;           // game delays are quantised to ticks
+      const dtv = +(snap ? ticks / TK : Math.max(0.01, wantDt)).toFixed(4);
+      timing = { want: wantDt * Lc, dt: dtv, ticks, cycle: +(dtv * Lc).toFixed(3), fps: +(1 / dtv).toFixed(2), steps: Lc, D: 0, turns: 0 };
+      const iStart = TB, iStop = hasStop ? TB + 1 : -1, iChain = TB + 1 + (hasStop ? 1 : 0);
+      const M = Lc, nTurns = Math.max(1, Math.round(en.turns || 1)); chainN = M;
+      const resetAll = () => { const b = []; for (let i = 0; i < N; i++) b.push(gop(gidx(i), i === seq[0] ? 100 : 0)); return b; };
+      const zone = (z, dflt) => ({ x: cx + (z.dx === undefined ? dflt.dx : z.dx), y: my + (z.dy === undefined ? dflt.dy : z.dy), w: z.w || dflt.w, h: z.h || dflt.h });
+      // start trigger
+      const sz = zone(st, { dx: 0, dy: p.height - 60, w: 120, h: 100 }), startBody = [...resetAll(), ...(en.type === 'turns' ? [tdea(iStop), tact(iStop)] : []), tact(iChain)];
+      let sb, sr = st.again ? 2 : 1, slab;
+      if (st.type === 'auto') { sb = bPlayer; slab = 'START: automatic (zone on the spawn point)'; T(spawn[0], spawn[1], st.w || 260, st.h || 260, sb, 1, 0, startBody, 'start', slab); }
+      else {
+        sb = st.type === 'click' ? bClick : st.type === 'trigger' ? bTrig : bPlayer;
+        slab = 'START: ' + (st.type === 'click' ? 'click' : st.type === 'trigger' ? 'activated by your trigger' : 'player enters');
+        T(sz.x, sz.y, sz.w, sz.h, sb, sr, 0, startBody, 'start', slab);
+        if (st.type === 'click' && st.button !== false) btnGroup(sz.x, sz.y, Math.min(sz.w, 140), Math.min(sz.h, 60), 0x2f9e4f, 'play');
+        txt(sz.x, sz.y + sz.h / 2 + 14, slab, 9, 0x4fd27a);
       }
-      for (let k = 0; k < N; k++)
-        T({ x: 150 + k * 3, y: 300, w: 40, h: 40, b: p.bTimer, r: 4, i: +(N * p.dt).toFixed(3), d: 0 }, [gop(k + GB, 100), gop((k - 1 + N) % N + GB, 0)]);
+      // stop trigger
+      if (en.type === 'turns') {
+        // ONE timer trigger instead of unrolling the chain: fires after (turns x cycle) and switches the chain off
+        const half = snap ? (ticks > 1 ? Math.floor(ticks / 2) / TK : 0) : dtv / 2, D = +(Math.max(dtv, (nTurns * Lc * dtv - half) * (1 + (en.corr || 0) / 100))).toFixed(4);
+        timing.D = D; timing.turns = nTurns;
+        const fin = en.after === 'reset' ? seq[0] : seq[Lc - 1], body = [];
+        for (let k = 0; k < M; k++) body.push(tdea(iChain + k));
+        for (let i = 0; i < N; i++) body.push(gop(gidx(i), i === fin ? 100 : 0));
+        T(cx + 150, floor + 70, 12, 12, bTrig, 2, D, body, 'stop', 'END TIMER: after ' + nTurns + ' cycle(s) = ' + D + ' s');
+        txt(cx + 150, floor + 90, 'END TIMER: ' + D + ' s', 9, 0xff7a5c);
+      } else if (hasStop) {
+        const zz = zone(stp, { dx: 150, dy: p.height - 60, w: 120, h: 100 }), stopBody = [];
+        for (let k = 0; k < M; k++) stopBody.push(tdea(iChain + k));
+        if (en.after === 'reset') stopBody.push(...resetAll());
+        const bb = stp.type === 'click' ? bClick : stp.type === 'trigger' ? bTrig : bPlayer, lbl = 'STOP: ' + (stp.type === 'click' ? 'click' : stp.type === 'trigger' ? 'activated by your trigger' : 'player enters');
+        T(zz.x, zz.y, zz.w, zz.h, bb, 2, 0, stopBody, 'stop', lbl);
+        if (stp.type === 'click' && stp.button !== false) btnGroup(zz.x, zz.y, Math.min(zz.w, 140), Math.min(zz.h, 60), 0xd8482f, 'stop');
+        txt(zz.x, zz.y + zz.h / 2 + 14, lbl, 9, 0xff7a5c);
+      }
+      // chain
+      const cols = Math.max(10, Math.floor(Math.max(p.size * 1.5, 480) / 16)), cy0 = floor + 110, left = cx - Math.min(cols, M) * 16 / 2;
+      for (let k = 0; k < M; k++) {
+        const cur = seq[k % Lc], to = seq[(k + 1) % Lc], body = [gop(gidx(to), 100), gop(gidx(cur), 0)];
+        body.push(tact(iChain + (k + 1) % M));
+        T(left + (k % cols) * 16 + 8, cy0 + Math.floor(k / cols) * 16 + 8, 12, 12, bTrig, p.rChain === undefined ? 2 : p.rChain, dtv, body, 'chain', 'step ' + k);
+      }
+      txt(cx, cy0 - 22, 'FRAME CHAIN: ' + M + ' timer triggers (do not move or delete)', 9, 0x7aa8ff);
     }
 
     const pieces = { shapes, specials, groups, trig };
-    const startX = p.mode === 'control' ? left + 40 : cx - 150;
-    const xml = `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${r1(startX)}" y="${r1(floor - 60)}" c="${p.vehicle}" f="t" h="f" bg="0" bgc="1710618" e="1"/>\n` +
-      `    <shapes>\n        ${shapes.join('\n        ')}\n    </shapes>\n    <specials>\n        ${specials.join('\n        ')}\n    </specials>\n` +
-      `    <groups>\n${groups.join('\n')}\n    </groups>\n    <triggers>\n${trig.join('\n')}\n    </triggers>\n</levelXML>\n`;
-    return { xml, rf, scale, art, facesPerFrame: Math.round(faces / N), maxFaces: Math.max(...rf.frames.map((f) => f.polys.length)), pieces, triggers: trig.length, groups: N, cy: my, mono: mf, points: mf ? mf.points : 0 };
+    const base = `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${r1(spawn[0])}" y="${r1(spawn[1])}" c="${p.vehicle || 1}" f="t" h="f" bg="0" bgc="1710618" e="1"/>\n</levelXML>\n`;
+    const xml = mergeLevel(base, pieces);
+    return { xml, rf, scale, art, facesPerFrame: Math.round(faces / N), pieces, triggers: trig.length, groups: groups.length, frameGroups: N, lay, chain: chainN, timing, seq, spawn, floor, cy: my, mono: mf, points: mf ? mf.points : 0 };
   }
-
 
   /* adds the pieces of a build() into an existing level, keeping its real section order */
   function inspectLevel(L) {
@@ -896,43 +1124,86 @@ if (typeof module !== 'undefined') module.exports = HW3D;
 </script>
 <script>
 const $=id=>document.getElementById(id);
-let cur=null,objModel=null,last=null,timer=null,anim=null;
-const num=id=>+$(id).value, hexRGB=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
-function labels(){[['frames','vN'],['shades','vH'],['rres','vR'],['pbud','vB'],['detail','vD'],['size','vS'],['pitch','vP'],['persp','vQ'],['dt','vT']].forEach(([a,b])=>$(b).textContent=$(a).value);
-  $('monoOpts').style.display=$('opt').value==='mono'?'block':'none';$('autoOpts').style.display=$('mode').value==='auto'?'block':'none';$('obj').style.display=$('model').value==='obj'?'block':'none'}
+let cur=null,objModel=null,last=null,timer=null,anim=null,wasDemo=true;
+const num=id=>+$(id).value,chk=id=>$(id).checked,hexRGB=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+const SL=[['frames','vN'],['detail','vD'],['size','vS'],['pitch','vP'],['persp','vQ'],['sweep','vW'],['turnSec','vT'],['shades','vH'],['rres','vR'],['pbud','vB'],['lightAz','vLa'],['lightEl','vLe'],['ambient','vAm']];
+function axisVec(){const v=$('axisSel').value;return v==='custom'?[num('ax'),num('ay'),num('az')]:v.split(',').map(Number)}
+function dirText(sign){
+  const a=HW3D_norm(axisVec()),v=[a[1]*sign,-a[0]*sign];
+  if(Math.hypot(v[0],v[1])<0.25)return sign*(a[2]>=0?1:-1)>0?'counterclockwise (seen from the front)':'clockwise (seen from the front)';
+  const ang=Math.atan2(v[1],v[0])*180/Math.PI,names=['right','up-right','up','up-left','left','down-left','down','down-right'];
+  return 'the front surface moves '+names[((Math.round(ang/45)%8)+8)%8];
+}
+function HW3D_norm(a){const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l]}
+function labels(){
+  SL.forEach(([a,b])=>$(b).textContent=$(a).value);
+  const m=$('mode').value,st=$('sType').value,et=$('eType').value;
+  const show=(id,on)=>$(id).style.display=on?'block':'none';
+  show('ctlOpts',m==='control');show('timerOpts',m==='timer');show('customAxis',$('axisSel').value==='custom');
+  show('sZone',m==='timer'&&st!=='auto');show('eTurnsBox',m==='timer'&&et==='turns');show('eAfterBox',m==='timer'&&et!=='loop');show('stopBox',m==='timer'&&et==='stop');
+  show('monoOpts',$('opt').value==='mono');$('obj').style.display=$('model').value==='obj'?'block':'none';
+  const o=$('dirSel').options;o[0].textContent='Forward: '+dirText(1);o[1].textContent='Reverse: '+dirText(-1);
+  $('dirNote').textContent='';
+}
+function params(){
+  const m=$('mode').value,size=num('size'),height=Math.round(size*0.6);
+  const p={frames:num('frames'),sweep:num('sweep'),pingpong:chk('pingpong'),axis:axisVec(),dir:num('dirSel'),pitch:num('pitch'),yaw0:num('yaw0'),pitch0:num('pitch0'),roll0:num('roll0'),
+    persp:num('persp')>0?num('persp')+1.5:0,scale:[num('sx')||1,num('sy')||1,num('sz')||1],color:hexRGB($('color').value),spec:chk('spec'),flip:chk('flip'),twoSided:chk('two'),outline:chk('outline'),
+    lightAz:num('lightAz'),lightEl:num('lightEl'),ambient:num('ambient'),size,height,cx:num('cx'),cy:num('cy'),arenaW:num('arena'),foreground:chk('fore'),vehicle:num('veh'),
+    mono:$('opt').value==='mono',shades:num('shades'),rasterRes:num('rres'),pointBudget:num('pbud'),smooth:1,backColor:parseInt($('back').value.slice(1),16),
+    mode:m,labels:chk('labels'),opAct:num('opa'),trigAct:num('tra'),deaAct:num('dea'),bPlayer:num('bp'),bClick:num('bk'),bTimer:num('bt'),rZone:num('rz'),rChain:num('rch'),
+    turnsAcross:num('turnsAcross'),zoneDY:num('zoneDY'),zoneH:num('zoneH'),
+    scene:{floor:chk('sFloor'),walls:chk('sWalls'),stripe:chk('sStripe'),back:chk('sBack'),text:chk('sTxt')?($('sTxtVal').value||(m==='control'?'Move the vehicle left and right to rotate the model':'3D model')):''},
+    start:{type:$('sType').value,dx:num('sdx'),dy:num('sdy'),w:num('sw'),h:num('sh'),button:chk('sBtn'),again:chk('sAgain')},
+    end:{type:$('eType').value,turns:num('eTurns'),corr:num('eCorr'),after:$('eAfter').value},
+    stop:{type:$('pType').value,dx:num('pdx'),dy:num('pdy'),w:num('pw'),h:num('ph'),button:chk('pBtn')}};
+  p.cycleSec=num('turnSec');p.snap=(m==='timer'&&p.end.type==='turns'&&chk('snap'));
+  if(cur){p.idBase=cur.idBase;p.groupBase=cur.groups;p.trigBase=cur.trigs;if(cur.x!=null&&cur.y!=null)p.spawn=[cur.x,cur.y]}
+  return p;
+}
 function run(){
-  labels();
-  let model;
-  try{model=$('model').value==='obj'?objModel:HW3D.MODELS[$('model').value](num('detail'));}catch(e){model=null}
+  labels();let model;
+  try{model=$('model').value==='obj'?objModel:HW3D.MODELS[$('model').value](num('detail'))}catch(e){model=null}
   if(!model){$('stats').innerHTML='<span class="warn">Choose an .obj file.</span>';return}
-  const p={frames:num('frames'),pitch:num('pitch'),yaw0:num('yaw0'),persp:num('persp')>0?num('persp')+1.5:0,color:hexRGB($('color').value),
-    spec:$('spec').checked,flip:$('flip').checked,twoSided:$('two').checked,outline:$('outline').checked,size:num('size'),cx:num('cx'),floor:num('floor'),
-    height:Math.round(num('size')*0.6),arenaW:num('arena'),foreground:$('fore').checked,mode:$('mode').value,vehicle:num('veh'),
-    opAct:num('opa'),trigAct:num('tra'),bPlayer:num('bp'),bTimer:num('bt'),rZone:num('rz'),dt:num('dt'),mono:$('opt').value==='mono',shades:num('shades'),rasterRes:num('rres'),pointBudget:num('pbud'),smooth:1,backColor:parseInt($('back').value.slice(1),16)};
-  if(cur){p.idBase=cur.idBase;p.groupBase=cur.groups;p.trigBase=cur.trigs}
-  const r=HW3D.build(model,p);
+  const p=params();$('outline').disabled=p.mono;const r=HW3D.build(model,p);
   r.out=cur?HW3D.mergeLevel($('lvl').value,r.pieces):r.xml;last={r,p,model};
-  $('fr').max=p.frames-1;if(+$('fr').value>p.frames-1)$('fr').value=0;
+  const L=r.seq.length;$('fr').max=L-1;if(+$('fr').value>L-1)$('fr').value=0;
   const kb=Math.round(r.out.length/1024),art=(cur?cur.art:0)+r.art,over=art>10000;
-  $('stats').innerHTML=`<b>${p.frames}</b> frames · <b>${r.facesPerFrame}</b> ${p.mono?'art shapes':'faces'} per frame${p.mono?' · <b>'+r.points+'</b> points':''} · total art <b>${art}</b> / 10000${cur?' (incl. your level)':''} · <b>${r.triggers}</b> triggers · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
-   (over?'<br><span class="warn">Over the art limit: lower the frames or the detail.</span>':'')+
-   (kb>900?'<br><span class="warn">Very large file: if the game freezes on import, lower the frames or the detail.</span>':'')+
-   (p.mode==='control'?`<br>Each floor zone is ${(p.arenaW/p.frames).toFixed(1)} px wide.`:'');
-  draw();
+  $('stats').innerHTML=`<b>${p.frames}</b> frames · <b>${r.facesPerFrame}</b> ${p.mono?'art shapes':'faces'} per frame${p.mono?' · <b>'+r.points+'</b> points':''} · total art <b>${art}</b> / 10000${cur?' (incl. your level)':''} · <b>${r.groups}</b> groups · <b>${r.triggers}</b> triggers${r.chain?' ('+r.chain+' in the chain)':''} · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
+    (over?'<br><span class="warn">Over the art limit: lower the frames, shades or detail.</span>':'')+
+    (kb>900?'<br><span class="warn">Very large file: if the game freezes on import, lower the frames or detail.</span>':'')+
+    (p.mode==='timer'&&p.end.type==='stop'?'<br><span class="warn">Stop uses the "Deactivate" action (Advanced). If it does nothing, change that number.</span>':'')+
+    (p.mode==='control'?`<br>Each zone is ${(p.arenaW/Math.max(1,Math.round(r.seq.length*p.turnsAcross))).toFixed(1)} units wide.`:'')+
+    (r.timing&&p.end.type!=='turns'?`<br>One cycle takes ~${r.timing.cycle} s (${(r.timing.dt*1000).toFixed(0)} ms per frame).`:'')+(r.timing&&p.end.type==='turns'?`<br>Timing: <b>${r.timing.steps}</b> steps × <b>${(r.timing.dt*1000).toFixed(1)} ms</b> (${r.timing.fps} fps${r.timing.ticks?', '+r.timing.ticks+' tick'+(r.timing.ticks>1?'s':'')+' per step':''}) = <b>${r.timing.cycle} s</b> per cycle`+(Math.abs(r.timing.cycle-r.timing.want)/r.timing.want>0.08?` <span class="warn">(you asked ${r.timing.want.toFixed(2)} s: step time is rounded to whole game ticks, 1/30 s each; change the frames, the seconds, or untick snapping)</span>`:'')+(r.timing.D?`<br>End timer: <b>${r.timing.D} s</b> = ${r.timing.turns} cycle(s) minus half a step`:''):'')+
+    (!cur&&!p.scene.floor?'<br><span class="warn">New level without floor: the player will fall. Tick Floor or paste your level.</span>':'');
+  draw();drawMap();
 }
 function draw(){
-  if(!last)return;const {r,p}=last,k=+$('fr').value,cv=$('cv'),W=cv.width,H=cv.height,g=cv.getContext('2d');
+  if(!last)return;const {r,p}=last,i=+$('fr').value,k=r.seq[Math.min(i,r.seq.length-1)],cv=$('cv'),W=cv.width,H=cv.height,g=cv.getContext('2d');
   g.fillStyle='#'+('000000'+p.backColor.toString(16)).slice(-6);g.fillRect(0,0,W,H);
   const s=Math.min(W,H)/2/(r.rf.extent||1)*0.9;
-  for(const q of r.rf.frames[k].polys){g.fillStyle=g.strokeStyle=`rgb(${q.color})`;g.beginPath();
-    q.pts.forEach((t,i)=>i?g.lineTo(W/2+t[0]*s,H/2+t[1]*s):g.moveTo(W/2+t[0]*s,H/2+t[1]*s));g.closePath();g.fill();if(p.outline)g.stroke()}
-  $('frl').textContent=(k+1)+' / '+p.frames;
+  for(const q of r.rf.frames[k].polys){g.fillStyle=g.strokeStyle=`rgb(${q.color})`;g.beginPath();q.pts.forEach((t,j)=>j?g.lineTo(W/2+t[0]*s,H/2+t[1]*s):g.moveTo(W/2+t[0]*s,H/2+t[1]*s));g.closePath();g.fill();if(p.outline)g.stroke()}
+  $('frl').textContent=`step ${i+1} / ${r.seq.length} · frame ${k+1}`;
+}
+function drawMap(){
+  const cv=$('map'),g=cv.getContext('2d');if(!last)return;
+  const L=last.r.lay;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;L.forEach(o=>{x0=Math.min(x0,o.x);y0=Math.min(y0,o.y);x1=Math.max(x1,o.x+o.w);y1=Math.max(y1,o.y+o.h)});
+  const pad=20,s=Math.min((cv.width-pad*2)/(x1-x0),(cv.height-pad*2)/(y1-y0),3);cv.height=Math.round((y1-y0)*s+pad*2);
+  const col={model:'#e6000055',start:'#2fbf5a',stop:'#ff7a1a',chain:'#5f9bff',zone:'#5f9bff88',floor:'#8a2a1a'};
+  g.fillStyle='#000';g.fillRect(0,0,cv.width,cv.height);g.font='12px monospace';
+  L.forEach(o=>{g.fillStyle=col[o.k]||'#888';const X=pad+(o.x-x0)*s,Y=pad+(o.y-y0)*s;g.fillRect(X,Y,Math.max(2,o.w*s),Math.max(2,o.h*s));
+    if(['model','start','stop'].includes(o.k)){g.fillStyle='#ffd9d2';g.fillText(o.l,X+(o.k==='model'?4:o.w*s+6),Y+(o.k==='model'?16:Math.max(12,o.h*s/2+4)))}});
+  $('mapLeg').innerHTML='<span><i style="background:#2fbf5a"></i>start trigger</span><span><i style="background:#ff7a1a"></i>stop trigger</span><span><i style="background:#5f9bff"></i>frame chain / zones</span><span><i style="background:#8a2a1a"></i>floor</span>';
 }
 function debounce(){clearTimeout(timer);labels();timer=setTimeout(run,200)}
-['opt','shades','rres','pbud','model','mode','frames','detail','size','pitch','persp','color','back','spec','outline','fore','arena','veh','dt','bp','bt','rz','yaw0','opa','tra','cx','floor','two','flip'].forEach(i=>$(i).addEventListener('input',debounce));
+['opt','shades','rres','pbud','model','mode','frames','detail','size','pitch','persp','color','back','spec','outline','fore','arena','veh','turnSec','snap','bp','bk','bt','rz','rch','yaw0','pitch0','roll0','opa','tra','dea','cx','cy','two','flip','sx','sy','sz','axisSel','ax','ay','az','dirSel','sweep','pingpong','sType','sdx','sdy','sw','sh','sBtn','sAgain','eType','eTurns','eCorr','eAfter','pType','pdx','pdy','pw','ph','pBtn','sFloor','sWalls','sStripe','sBack','sTxt','sTxtVal','labels','lightAz','lightEl','ambient','turnsAcross','zoneDY','zoneH'].forEach(i=>$(i).addEventListener('input',debounce));
+document.querySelectorAll('[data-pitch]').forEach(b=>b.onclick=()=>{$('pitch').value=b.dataset.pitch;debounce()});
+function preset(demo){['sFloor','sWalls','sStripe','sBack','sTxt'].forEach(i=>$(i).checked=demo);debounce()}
+$('presetDemo').onclick=()=>preset(true);$('presetOnly').onclick=()=>preset(false);
 $('fr').addEventListener('input',draw);
 $('play').onclick=()=>{if(anim){clearInterval(anim);anim=null;$('play').textContent='▶ Spin';return}
-  $('play').textContent='❚❚ Pause';anim=setInterval(()=>{const n=last?last.p.frames:1;$('fr').value=(+$('fr').value+1)%n;draw()},90)};
+  $('play').textContent='❚❚ Pause';const step=()=>{const n=last?last.r.seq.length:1;$('fr').value=(+$('fr').value+1)%n;draw()};
+  anim=setInterval(step,Math.max(40,last&&last.r.timing?last.r.timing.dt*1000:90))};
 $('obj').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=()=>{try{objModel=HW3D.parseOBJ(rd.result);run()}catch(err){objModel=null;$('stats').innerHTML='<span class="warn">'+err.message+'</span>'}};rd.readAsText(f)};
 $('copy').onclick=async()=>{if(!last)return;const x=last.r.out;
@@ -945,7 +1216,8 @@ $('lvl').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>
   const i=HW3D.inspectLevel(v);
   if(!i.valid){cur=null;$('lvS').textContent='not valid';return run()}
   cur=i;$('lvS').textContent=i.art+' art';
-  if(i.x!=null&&i.y!=null){$('cx').value=Math.max(Math.round(num('arena')/2)+80,Math.round(i.x+num('arena')/2));$('floor').value=Math.round(i.y+60)}
+  if(i.x!=null&&i.y!=null){$('cx').value=Math.round(i.x+300);$('cy').value=Math.round(i.y+60-Math.round(num('size')*0.6))}
+  if(wasDemo){['sFloor','sWalls','sStripe','sBack','sTxt'].forEach(k=>$(k).checked=false);wasDemo=false}
   run()},300)});
 run();
 </script></body></html>
