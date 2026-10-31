@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music Player for Happy Wheels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+
+:root{--bg:#0a0a0a;--pn:#0d0d0d;--tx:#ff4a3a;--mu:#c9544a;--ac:#ff1a1a;--bd:#7a0c0c;--hi:#ffe1b8;--yl:#ffd23f;--f:"VT323","Courier New",ui-monospace,monospace;--fh:"Silkscreen","VT323","Courier New",monospace}
+*{box-sizing:border-box;border-radius:0}
+::selection{background:var(--ac);color:#000}
+*{scrollbar-width:thin;scrollbar-color:#b00 #120000}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:#120000}::-webkit-scrollbar-thumb{background:#b00;border:2px solid #120000}
+body::before{content:"";position:fixed;inset:6px;border:1px solid var(--ac);pointer-events:none;z-index:9998}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(255,0,0,.045) 0 1px,transparent 1px 3px)}
+b,strong{font-weight:400;color:var(--hi)}
+a{color:var(--yl)}a:hover{background:var(--yl);color:#000}
+:focus-visible{outline:2px dashed var(--yl);outline-offset:2px}
+input[type=range],input[type=checkbox],input[type=radio],progress{accent-color:var(--ac)}
+select,input[type=number],input[type=text],input:not([type]),input[type=search],input[type=color]+x{font-family:var(--f);font-size:17px}
+option{background:#000;color:var(--tx)}
+
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.3 var(--f);display:flex;min-height:100vh}
+aside{width:360px;padding:22px 20px;background:var(--pn);border-right:1px solid var(--ac);overflow:auto;max-height:100vh;position:sticky;top:0}
+main{flex:1;padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+h1{font:400 19px/1.25 var(--fh);letter-spacing:.06em;margin:0 0 8px;color:var(--ac);text-shadow:2px 2px 0 #4a0000}
+h1::before{content:"\2605 ";color:var(--yl);text-shadow:none}
+h2{font:400 14px/1.2 var(--fh);margin:22px 0 0;padding-top:12px;border-top:1px dashed var(--ac);color:var(--ac);letter-spacing:.05em}
+h2::before{content:"\2605 ";color:var(--yl)}
+label{display:block;margin-top:10px;font-size:16px;color:var(--mu)}label b{float:right}
+input[type=range]{width:100%}
+select,input[type=number],input[type=text]{width:100%;background:#000;color:var(--hi);border:1px solid var(--bd);padding:5px 6px}
+select:hover,input[type=number]:hover,input[type=text]:hover,textarea:hover{border-color:var(--ac)}
+textarea{width:100%;height:60px;background:#000;color:var(--hi);border:1px solid var(--bd);padding:6px;font:15px/1.15 var(--f);resize:vertical}
+.row{display:flex;gap:8px}.row>div{flex:1}
+.chk{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:16px}
+button{background:var(--ac);color:#000;border:1px solid var(--ac);padding:7px 12px;font:400 17px var(--f);letter-spacing:.04em;cursor:pointer;width:100%;margin-top:10px;box-shadow:3px 3px 0 #4a0000}
+button:hover:not(:disabled){background:#000;color:var(--ac)}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #4a0000}
+button.s{background:#000;color:var(--tx);border:1px solid var(--bd)}
+button.s:hover:not(:disabled){background:var(--bd);color:var(--hi);border-color:var(--ac)}
+button.sm{width:auto;margin:0;padding:4px 9px;font-size:16px}
+button:disabled{opacity:.4;cursor:default;box-shadow:none}
+small{color:var(--mu);font-size:15px;line-height:1.25}
+.ai{margin-top:10px;padding:7px 9px;border:1px dashed var(--yl);background:#1a1400;color:var(--yl);font-size:16px;line-height:1.25}
+.tip{margin-top:8px;padding:7px 9px;border:1px solid var(--bd);border-left:4px solid var(--ac);background:#160000;font-size:16px;line-height:1.25;color:var(--tx)}
+#drop{border:2px dashed var(--ac);padding:16px 14px;text-align:center;color:var(--mu);cursor:pointer;margin-top:12px;background:#0f0000}
+#drop:hover{background:#1c0000;color:var(--hi)}
+#drop.on{border-style:solid;color:var(--hi);background:#220000}
+#stats{font-size:17px;color:var(--mu);line-height:1.3;border:1px solid var(--bd);padding:6px 10px;background:var(--pn)}#stats b{color:var(--hi)}.warn{color:#ff8a8a}
+#stage{display:flex;align-items:center;justify-content:center;background:#000;border:1px solid var(--ac);min-height:260px;padding:8px}
+#stage canvas{max-width:100%;max-height:52vh}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ctl input[type=range]{flex:1;min-width:160px}
+canvas.tl{width:100%;height:64px;background:#000;border:1px solid var(--bd);cursor:ew-resize;touch-action:none}
+canvas.map{width:100%;background:#000;border:1px solid var(--bd)}
+#sfPick{max-height:190px;overflow:auto;margin-top:6px;border:1px solid var(--bd);background:#000}
+#sfPick div{display:flex;justify-content:space-between;gap:8px;padding:3px 8px;font-size:16px;cursor:pointer;border-bottom:1px dotted #4a0000}
+#sfPick div:hover{background:#2a0000;color:var(--hi)}#sfPick div.on{background:var(--ac);color:#000}#sfPick div.on small{color:#000}#sfPick small{font-size:14px;color:var(--mu)}#sfPick .grp{position:sticky;top:0;background:#2a0000;color:var(--yl);font:400 11px var(--fh);letter-spacing:.05em;cursor:default;padding:5px 8px}#sfPick .grp:hover{background:#2a0000;color:var(--yl)}
+#sfxList{display:flex;flex-direction:column;gap:5px;margin-top:8px;max-height:260px;overflow:auto}
+#sfxList>div{display:grid;grid-template-columns:62px 1fr auto auto auto;gap:5px;align-items:center;background:#000;border:1px dotted var(--bd);padding:4px}
+#sfxList input{padding:2px 5px;font-size:15px}
+#sfxList small{font-size:14px}
+.leg span{display:inline-block;margin-right:14px;font-size:15px;color:var(--mu)}.leg i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border:1px solid #000}
+progress{width:100%;height:12px;margin-top:8px;background:#200}
+details>summary{color:var(--yl)}
+@media(max-width:860px){body{flex-direction:column}aside{width:auto;max-height:none;position:static}}
+@media(prefers-reduced-motion:reduce){button:active:not(:disabled){transform:none}}
+
+
+#roll{width:100%;height:230px;background:#000;border:1px solid var(--ac);display:block}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-top:6px;background:#000;border:1px dotted var(--bd);padding:4px 6px}
+.mrow>span{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow small{font-size:14px}
+.mrow button{margin:0;padding:3px 8px;font-size:15px;box-shadow:none;width:auto;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist{max-height:230px;overflow:auto;margin-top:6px}
+.prow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:3px 6px;border-bottom:1px dotted #4a0000;background:#000}
+.prow small{font-size:14px}
+.sub{display:none;margin-left:8px;padding-left:10px;border-left:2px solid var(--bd)}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:10000;display:none;align-items:center;justify-content:center}
+#modal .box{width:min(560px,94vw);max-height:84vh;background:var(--pn);border:2px solid var(--ac);padding:14px;display:flex;flex-direction:column;box-shadow:6px 6px 0 #4a0000}
+#modal .lst{overflow:auto;margin-top:8px;border:1px solid var(--bd);background:#000;flex:1;min-height:200px}
+#modal .lst div{display:flex;justify-content:space-between;gap:8px;padding:3px 8px;cursor:pointer;border-bottom:1px dotted #4a0000;font-size:17px}
+#modal .lst div:hover{background:#2a0000;color:var(--hi)}#modal .lst div.on{background:var(--ac);color:#000}#modal .lst div.on small{color:#000}
+#modal .lst .grp{position:sticky;top:0;background:#2a0000;color:var(--yl);font:400 11px var(--fh);cursor:default}
+.leg b{color:var(--hi)}
+</style></head><body>
+<aside>
+<h1>Music → Happy Wheels</h1>
+<small>Turns a MIDI song into a level: timer triggers play the game's own sound effects as the notes.</small>
+<div class="ai">⚠ This program was made by an AI for experimental purposes. Expect bugs of all kinds.</div>
+
+<div id="drop">Drop a MIDI file here (.mid .midi .kar .rmi)<br>or click to choose</div>
+<input id="file" type="file" accept=".mid,.midi,.kar,.rmi,audio/midi,audio/x-midi" hidden>
+<div id="songInfo"><small>No song loaded.</small></div>
+
+<h2>1 · Song</h2>
+<div class="row"><div><label>Start at (s)</label><input id="tStart" type="number" min="0" step="0.5" value="0"></div><div><label>End at (s, 0 = all)</label><input id="tEnd" type="number" min="0" step="0.5" value="0"></div></div>
+<label>Speed <b id="vSp"></b></label><input id="speed" type="range" min="0.25" max="3" step="0.05" value="1">
+<label>Minimum velocity (drops very soft notes) <b id="vMv"></b></label><input id="minVel" type="range" min="0" max="100" value="0">
+<label>Parts (tracks / channels)</label>
+<div id="parts" class="plist"><small>Load a song first.</small></div>
+
+<label>Max shapes (triggers the tool adds; empty = none)</label>
+<input id="maxShapes" type="number" min="0" step="1" placeholder="none">
+<small>If the song is longer, its last notes are cut. The start, loop and block triggers always stay.</small>
+<h2>2 · Sounds</h2>
+<label>How notes become sound effects</label>
+<select id="mapMode">
+<option value="one">One sound effect for every note (default)</option>
+<option value="pitch">By pitch: low / mid / high notes use different sounds</option>
+<option value="track">By part: each track or instrument has its own sound</option>
+<option value="note">Per note: pick a sound for every note that appears</option>
+</select>
+<div class="tip">Sound triggers cannot change pitch, so different pitches are faked by using different sound effects. The sounds are not tuned notes.</div>
+<div id="mapUI"></div>
+<div class="chk"><input id="velVol" type="checkbox"><span>Use note velocity as sound volume (v)</span></div>
+
+<h2>3 · Playback</h2>
+<label>Starts</label>
+<select id="sType"><option value="auto">Automatically when the level starts</option><option value="trigger">When another trigger of mine activates it (a loose trigger)</option><option value="click">When the player clicks a button</option></select>
+<label>When the song ends</label>
+<select id="eType"><option value="loop">Loop forever</option><option value="none">Nothing</option></select>
+<div id="gapBox" class="sub"><label>Pause before looping (s)</label><input id="gap" type="number" min="0" step="0.1" value="0.5"></div>
+
+<h2>4 · Scene</h2>
+<div class="row"><button class="s sm" id="presetFull" style="margin-top:8px">Level with platform</button><button class="s sm" id="presetLoose" style="margin-top:8px">Only the triggers</button></div>
+<div class="chk"><input id="sFloor" type="checkbox" checked><span>Platform (floor)</span></div>
+<div class="chk"><input id="sWalls" type="checkbox" checked><span>Side walls</span></div>
+<div class="chk"><input id="sStripe" type="checkbox" checked><span>Red floor stripe</span></div>
+<div class="chk"><input id="sTxt" type="checkbox" checked><span>Text</span></div>
+<input id="sTxtVal" type="text" value="" placeholder="auto text" style="margin-top:6px">
+<div class="chk"><input id="labels" type="checkbox" checked><span>Small trigger labels (visible in game)</span></div>
+<div class="row"><div><label>Vehicle (new level)</label><select id="veh"><option value="1">Wheelchair</option><option value="2">Segway</option><option value="4">Shopping cart</option></select></div></div>
+
+<h2>5 · Level</h2>
+<label>Current level (optional) <b id="lvS"></b></label>
+<textarea id="lvl" placeholder="Paste your level data here and the music triggers are added to it"></textarea>
+<div class="row"><div><label>Centre x</label><input id="cx" type="number" value="1000"></div><div><label>Floor y</label><input id="cy" type="number" value="5300"></div></div>
+
+<h2>Advanced</h2>
+<label>Time resolution (ms): notes closer than this share one trigger <b id="vRes"></b></label><input id="res" type="range" min="10" max="200" step="1" value="33">
+<div class="row"><div><label>Max sounds at once (0 = all)</label><input id="poly" type="number" min="0" value="0"></div><div><label>Max notes (0 = all)</label><input id="maxNotes" type="number" min="0" value="0"></div></div>
+<label>Block length (s): long songs are split in chained blocks <b id="vSeg"></b></label><input id="seg" type="range" min="0" max="60" step="1" value="10">
+<small>0 = one single block. Blocks keep every delay short.</small>
+<div class="chk"><input id="direct" type="checkbox"><span>Sound triggers carry their own delay (about half the triggers, unverified)</span></div>
+<div class="row"><div><label>Trigger-only "triggered by"</label><input id="bt" type="number" value="5"></div><div><label>Player contact</label><input id="bp" type="number" value="1"></div></div>
+<div class="row"><div><label>Click</label><input id="bk" type="number" value="6"></div><div><label>Repeat type</label><input id="rt" type="number" value="2"></div></div>
+<div class="row"><div><label>"Activate" action</label><input id="tra" type="number" value="0"></div><div><label>Sound trigger type</label><input id="tsn" type="number" value="2"></div></div>
+<div class="row"><div><label>Volume (v)</label><input id="vol" type="number" step="0.1" value="1"></div><div><label>Sound ID offset</label><input id="sOff" type="number" value="0"></div></div>
+<button id="copy" disabled>Copy level data</button>
+<button id="dl" class="s" disabled>Download .txt</button>
+</aside>
+<main>
+<div id="stats">Load a MIDI file to start.</div>
+<canvas id="roll" width="1200" height="230"></canvas>
+<div class="ctl"><button id="play" class="s" style="width:auto;margin:0" disabled>▶ Preview</button><span id="ptime">0.0 / 0.0 s</span>
+<label style="margin:0;display:flex;gap:6px;align-items:center">Volume <input id="pvol" type="range" min="0" max="1" step="0.05" value="0.5" style="width:120px"></label>
+<small>The preview plays the real sound effects from your internet connection.</small></div>
+<b style="color:var(--hi)">Trigger / object layout in the game</b>
+<canvas id="map" class="map" width="1200" height="320"></canvas>
+<div class="leg" id="mapLeg"></div>
+</main>
+<div id="modal"><div class="box"><b>Pick a sound effect</b><input id="mq" type="text" placeholder="search…" style="margin-top:8px"><div class="lst" id="mlst"></div>
+<div class="row"><button class="s" id="mclose">Close</button></div></div></div>
+<script>
+/* HWMusic: MIDI -> Happy Wheels level triggers (sound triggers fired by delayed timer triggers) */
+const HWMusic = (function () {
+  const GM = ('Acoustic Grand Piano,Bright Acoustic Piano,Electric Grand Piano,Honky-tonk Piano,Electric Piano 1,Electric Piano 2,Harpsichord,Clavinet,Celesta,Glockenspiel,Music Box,Vibraphone,Marimba,Xylophone,Tubular Bells,Dulcimer,Drawbar Organ,Percussive Organ,Rock Organ,Church Organ,Reed Organ,Accordion,Harmonica,Tango Accordion,Nylon Guitar,Steel Guitar,Jazz Guitar,Clean Guitar,Muted Guitar,Overdriven Guitar,Distortion Guitar,Guitar Harmonics,Acoustic Bass,Finger Bass,Pick Bass,Fretless Bass,Slap Bass 1,Slap Bass 2,Synth Bass 1,Synth Bass 2,Violin,Viola,Cello,Contrabass,Tremolo Strings,Pizzicato Strings,Orchestral Harp,Timpani,String Ensemble 1,String Ensemble 2,Synth Strings 1,Synth Strings 2,Choir Aahs,Voice Oohs,Synth Voice,Orchestra Hit,Trumpet,Trombone,Tuba,Muted Trumpet,French Horn,Brass Section,Synth Brass 1,Synth Brass 2,Soprano Sax,Alto Sax,Tenor Sax,Baritone Sax,Oboe,English Horn,Bassoon,Clarinet,Piccolo,Flute,Recorder,Pan Flute,Blown Bottle,Shakuhachi,Whistle,Ocarina,Square Lead,Saw Lead,Calliope Lead,Chiff Lead,Charang Lead,Voice Lead,Fifths Lead,Bass+Lead,New Age Pad,Warm Pad,Polysynth Pad,Choir Pad,Bowed Pad,Metallic Pad,Halo Pad,Sweep Pad,Rain FX,Soundtrack FX,Crystal FX,Atmosphere FX,Brightness FX,Goblins FX,Echoes FX,Sci-fi FX,Sitar,Banjo,Shamisen,Koto,Kalimba,Bagpipe,Fiddle,Shanai,Tinkle Bell,Agogo,Steel Drums,Woodblock,Taiko Drum,Melodic Tom,Synth Drum,Reverse Cymbal,Guitar Fret Noise,Breath Noise,Seashore,Bird Tweet,Telephone Ring,Helicopter,Applause,Gunshot').split(',');
+  const DRUM_GROUP = { 35: 'kick', 36: 'kick', 37: 'snare', 38: 'snare', 39: 'snare', 40: 'snare', 41: 'tom', 43: 'tom', 45: 'tom', 47: 'tom', 48: 'tom', 50: 'tom', 42: 'hat', 44: 'hat', 46: 'hat', 49: 'cym', 51: 'cym', 52: 'cym', 53: 'cym', 55: 'cym', 57: 'cym', 59: 'cym' };
+  const NN = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const noteName = (n) => NN[n % 12] + (Math.floor(n / 12) - 1);
+
+  // ------------------------------------------------------------------ MIDI parser
+  function parseMidi(input) {
+    let u = input instanceof Uint8Array ? input : new Uint8Array(input);
+    const s4 = (o) => String.fromCharCode(u[o], u[o + 1], u[o + 2], u[o + 3]);
+    if (s4(0) === 'RIFF') {                                  // .rmi: RIFF wrapper around a normal MIDI file
+      let o = 12, found = -1;
+      while (o + 8 <= u.length) { const sz = u[o + 4] | u[o + 5] << 8 | u[o + 6] << 16 | u[o + 7] << 24; if (s4(o) === 'data') { found = o + 8; break; } o += 8 + sz + (sz & 1); }
+      if (found < 0) throw new Error('RIFF file without MIDI data');
+      u = u.subarray(found);
+    }
+    if (u.length < 14 || s4(0) !== 'MThd') throw new Error('Not a MIDI file (no MThd header)');
+    const u16 = (o) => u[o] << 8 | u[o + 1], u32 = (o) => ((u[o] << 24) | (u[o + 1] << 16) | (u[o + 2] << 8) | u[o + 3]) >>> 0;
+    const hl = u32(4), format = u16(8), ntr = u16(10), div = u16(12);
+    const smpte = !!(div & 0x8000), ppq = smpte ? 0 : div;
+    const spt = smpte ? 1 / (((256 - (div >> 8)) & 0xff) * (div & 0xff) || 1) : 0;
+    let o = 8 + hl; const tempos = [{ tick: 0, mpq: 500000 }], tracksRaw = [];
+    for (let ti = 0; ti < ntr && o + 8 <= u.length; ti++) {
+      if (s4(o) !== 'MTrk') { o += 8 + u32(o + 4); ti--; continue; }
+      const len = u32(o + 4), end = Math.min(u.length, o + 8 + len); let p = o + 8, tick = 0, run = 0, name = '';
+      const ons = new Map(), notes = [], progs = {}; let maxTick = 0;
+      const vlq = () => { let v = 0, c, k = 0; do { c = u[p++]; v = (v << 7) | (c & 0x7f); } while (c & 0x80 && p < end && ++k < 4); return v; };
+      while (p < end) {
+        tick += vlq(); let st = u[p];
+        if (st < 0x80) st = run; else { p++; if (st < 0xf0) run = st; }
+        if (st === 0xff) {
+          const type = u[p++], l = vlq();
+          if (type === 0x51 && l === 3) tempos.push({ tick, mpq: u[p] << 16 | u[p + 1] << 8 | u[p + 2] });
+          else if (type === 0x03 && !name) name = String.fromCharCode(...u.subarray(p, p + l)).replace(/[^\x20-\x7e]/g, '').trim();
+          p += l; if (type === 0x2f) break;
+        } else if (st === 0xf0 || st === 0xf7) { p += vlq(); }
+        else {
+          const hi = st & 0xf0, ch = st & 15;
+          if (hi === 0xc0 || hi === 0xd0) { const a = u[p++]; if (hi === 0xc0 && !(ch in progs)) progs[ch] = a; }
+          else {
+            const a = u[p++], b = u[p++];
+            if (hi === 0x90 && b > 0) { const k = ch * 128 + a; if (!ons.has(k)) ons.set(k, []); ons.get(k).push([tick, b]); }
+            else if (hi === 0x80 || (hi === 0x90 && b === 0)) { const q = ons.get(ch * 128 + a); if (q && q.length) { const [t0, v] = q.shift(); notes.push({ t0, t1: tick, n: a, v, ch }); } }
+          }
+        }
+        if (tick > maxTick) maxTick = tick;
+      }
+      ons.forEach((q, k) => q.forEach(([t0, v]) => notes.push({ t0, t1: maxTick, n: k & 127, v, ch: k >> 7 })));
+      tracksRaw.push({ name, notes, progs }); o = end;
+    }
+    // tempo map -> seconds
+    tempos.sort((a, b) => a.tick - b.tick);
+    const cum = [0]; for (let i = 1; i < tempos.length; i++) cum[i] = cum[i - 1] + (tempos[i].tick - tempos[i - 1].tick) * tempos[i - 1].mpq / 1e6 / (ppq || 1);
+    const t2s = (t) => { if (smpte) return t * spt; let lo = 0, hi = tempos.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (tempos[m].tick <= t) lo = m; else hi = m - 1; } return cum[lo] + (t - tempos[lo].tick) * tempos[lo].mpq / 1e6 / ppq; };
+    const parts = []; let dur = 0;
+    tracksRaw.forEach((tr, ti) => {
+      const byCh = {}; tr.notes.forEach((n) => (byCh[n.ch] = byCh[n.ch] || []).push(n));
+      Object.keys(byCh).map(Number).sort((a, b) => a - b).forEach((ch) => {
+        const drum = ch === 9, prog = tr.progs[ch] || 0;
+        const notes = byCh[ch].map((n) => ({ t: t2s(n.t0), d: Math.max(0, t2s(n.t1) - t2s(n.t0)), n: n.n, v: n.v })).sort((a, b) => a.t - b.t || a.n - b.n);
+        notes.forEach((n) => { dur = Math.max(dur, n.t + n.d); });
+        const label = drum ? 'Drums' : (tr.name || GM[prog] || 'Track ' + ti);
+        parts.push({ id: 't' + ti + 'c' + ch, track: ti, ch, drum, program: prog, name: label, inst: drum ? 'Percussion' : GM[prog], notes });
+      });
+    });
+    return { format, ppq, duration: dur, parts, tempoChanges: tempos.length - 1 };
+  }
+
+  // ------------------------------------------------------------------ note -> sound assignment
+  /* M: {mode:'one'|'pitch'|'track'|'note', one, bands:[ids], edges:[note thresholds], tracks:{partId:id}, drums:{kick,snare,hat,tom,cym,other}, notes:{key:id}} */
+  const noteKey = (part, n) => (part.drum ? 'd' : '') + n;
+  function bandEdges(parts, nb, how) {
+    const all = []; parts.forEach((p) => { if (!p.drum) p.notes.forEach((n) => all.push(n.n)); });
+    if (!all.length) parts.forEach((p) => p.notes.forEach((n) => all.push(n.n)));
+    if (!all.length) return [];
+    all.sort((a, b) => a - b); const e = [];
+    for (let i = 1; i < nb; i++) e.push(how === 'range' ? Math.round(all[0] + (all[all.length - 1] - all[0]) * i / nb) : all[Math.min(all.length - 1, Math.floor(all.length * i / nb))]);
+    return e;
+  }
+  function soundFor(part, n, M) {
+    switch (M.mode) {
+      case 'pitch': { const e = M.edges || [], B = M.bands || []; let b = 0; while (b < e.length && n >= e[b]) b++; const v = B[Math.min(b, B.length - 1)]; return v === undefined ? M.one : v; }
+      case 'track': { if (part.drum) { const v = (M.drums || {})[DRUM_GROUP[n] || 'other']; return v === undefined ? M.one : v; } const v = (M.tracks || {})[part.id]; return v === undefined ? M.one : v; }
+      case 'note': { const v = (M.notes || {})[noteKey(part, n)]; return v === undefined ? M.one : v; }
+      default: return M.one;
+    }
+  }
+  /* P: {enabled:{partId:bool}, start, end, speed, minVel, res(ms), poly, maxNotes} -> {events:[{t,id,vel,pid,n}], dropped, duration} */
+  function makeEvents(parts, M, P) {
+    const speed = P.speed || 1, res = Math.max(0.001, (P.res === undefined ? 33 : P.res) / 1000), minVel = P.minVel || 0;
+    const a = P.start || 0, z = P.end > 0 ? P.end : Infinity; const ev = [];
+    for (const part of parts) {
+      if (P.enabled && P.enabled[part.id] === false) continue;
+      for (const n of part.notes) {
+        const t = n.t / speed; if (t < a - 1e-9 || t > z + 1e-9 || n.v < minVel) continue;
+        const id = soundFor(part, n.n, M); if (id === undefined || id === null || id < 0) continue;
+        ev.push({ t, id, vel: n.v, pid: part.id, n: n.n });
+      }
+    }
+    if (!ev.length) return { events: [], dropped: 0, duration: 0, raw: 0 };
+    ev.sort((x, y) => x.t - y.t);
+    const t0 = P.keepSilence ? a : ev[0].t, raw = ev.length;
+    ev.forEach((e) => { e.t = +(Math.round((e.t - t0) / res) * res).toFixed(4); });
+    // merge duplicates (same slot + same sound), then cap polyphony per slot
+    const out = []; let i = 0;
+    while (i < ev.length) {
+      let j = i; while (j < ev.length && ev[j].t === ev[i].t) j++;
+      const m = new Map(); for (let k = i; k < j; k++) { const e = ev[k], q = m.get(e.id); if (!q || e.vel > q.vel) m.set(e.id, e); }
+      let g = [...m.values()]; if (P.poly > 0 && g.length > P.poly) g = g.sort((x, y) => y.vel - x.vel || y.n - x.n).slice(0, P.poly);
+      g.sort((x, y) => x.id - y.id); out.push(...g); i = j;
+    }
+    let events = out, dropped = raw - out.length;
+    if (P.maxNotes > 0 && events.length > P.maxNotes) { dropped += events.length - P.maxNotes; events = events.slice(0, P.maxNotes); }
+    const duration = events.reduce((m, e) => Math.max(m, e.t), 0);
+    return { events, dropped, duration, raw };
+  }
+
+  // ------------------------------------------------------------------ XML
+  const r1 = (v) => Math.round(v * 10) / 10, esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const dnum = (x) => +x.toFixed(3);
+  function artXml(pts, color, id) {
+    const Q = pts.map((p) => [r1(p[0]), r1(p[1])]); let a = 1e9, b = 1e9, c = -1e9, d = -1e9;
+    Q.forEach((q) => { a = Math.min(a, q[0]); c = Math.max(c, q[0]); b = Math.min(b, q[1]); d = Math.max(d, q[1]); });
+    const w = Math.max(2, Math.round(c - a)), h = Math.max(2, Math.round(d - b)), cx = (a + c) / 2, cy = (b + d) / 2;
+    return `<sh t="4" i="f" p0="${r1(cx)}" p1="${r1(cy)}" p2="${w}" p3="${h}" p4="0" p5="f" p6="f" p7="1" p8="${color}" p9="-1" p10="100" p11="1"><v f="t" id="${id}" n="${Q.length}" ${Q.map((q, i) => `v${i}="${r1(q[0] - cx)}_${r1(q[1] - cy)}"`).join(' ')}/></sh>`;
+  }
+  /* p: see page. events: output of makeEvents */
+  function build(events, p) {
+    const TB = p.trigBase || 0, TA = p.trigAct === undefined ? 0 : p.trigAct;
+    const bT = p.bTimer === undefined ? 5 : p.bTimer, bP = p.bPlayer === undefined ? 1 : p.bPlayer, bC = p.bClick === undefined ? 6 : p.bClick;
+    const rT = p.rTimer === undefined ? 2 : p.rTimer, sc = p.scene || {}, st = p.start || { type: 'auto' }, en = p.end || { type: 'loop', gap: 0.5 };
+    const cx = p.cx, fy = p.cy, WW = p.platformW || 520;
+    const shapes = [], specials = [], groups = [], lay = [], trig = [];
+    let art = 0, id = p.idBase || 0;
+    const rect = (x, y, w, h, col, inter) => { shapes.push(`<sh t="0"${inter ? '' : ' i="f"'} p0="${r1(x)}" p1="${r1(y)}" p2="${Math.round(w)}" p3="${Math.round(h)}" p4="0" p5="t" p6="f" p7="1" p8="${col}" p9="-1" p10="100" p11="1"/>`); if (!inter) art++; };
+    const txt = (x, y, s, size, col) => specials.push(`<sp t="16" p0="${r1(x)}" p1="${r1(y)}" p2="0" p3="${col}" p4="2" p5="${size}" p6="1" p8="100"><p7><![CDATA[${esc(s)}]]></p7></sp>`);
+    const label = (x, y, s, size, col) => { if (p.labels) txt(x, y, s, size || 9, col || 0x9a93b0); };
+    const tact = (i) => `<t i="${i + TB}"><a i="${TA}"/></t>`;
+
+    // ----- segments / indices (relative to TB) -----
+    const slots = []; for (const e of events) { if (!slots.length || slots[slots.length - 1].t !== e.t) slots.push({ t: e.t, ev: [] }); slots[slots.length - 1].ev.push(e); }
+    const lastT = slots.length ? slots[slots.length - 1].t : 0, loop = en.type === 'loop' && slots.length > 0;
+    const endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap);
+    const L = p.seg > 0 ? p.seg : Infinity, segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
+    let J = slots.length ? segOf(lastT) + 1 : 1; const jE = loop ? segOf(endT) : -1; if (loop) J = Math.max(J, jE + 1);
+    const direct = !!p.direct;
+    let ix = 2; const iR = []; for (let j = 1; j < J; j++) iR[j] = ix++;
+    const iE = loop ? ix++ : -1;
+    const slotIdx = [], soundIdx = [];
+    slots.forEach((s, k) => { if (!direct) slotIdx[k] = ix++; soundIdx[k] = s.ev.map(() => ix++); });
+    const total = ix, tri = new Array(total);
+    const segTargets = Array.from({ length: J }, () => []);
+    slots.forEach((s, k) => { const j = segOf(s.t); if (direct) soundIdx[k].forEach((q) => segTargets[j].push(q)); else segTargets[j].push(slotIdx[k]); });
+
+    // ----- scene (platform etc.) -----
+    const th = 300, wallH = 700, spawn = p.spawn || [cx - 150, fy - 60];
+    if (sc.floor) {
+      rect(cx, fy + th / 2, WW + 120, th, 0x5a1414, true); lay.push({ k: 'floor', x: cx - WW / 2 - 60, y: fy, w: WW + 120, h: 14, l: 'platform' });
+      if (sc.walls) { rect(cx - WW / 2 - 40, fy - wallH / 2 + 10, 40, wallH, 0x5a1414, true); rect(cx + WW / 2 + 40, fy - wallH / 2 + 10, 40, wallH, 0x5a1414, true); }
+      if (sc.stripe) rect(cx, fy - 3, WW, 6, 0xff2a2a, false);
+    }
+    if (sc.text) txt(cx - 150, fy - 70, sc.text, 12, 0xffe1b8);
+
+    // ----- grid for the machinery -----
+    const cols = p.cols || 60, pitch = 16, gx0 = cx - Math.min(cols, Math.max(1, total - 2)) * pitch / 2, gy0 = fy + (sc.floor ? th + 60 : 120);
+    const cell = (i) => { const k = i - 2; return [gx0 + (k % cols) * pitch + 8, gy0 + 90 + Math.floor(k / cols) * pitch + 8]; };
+    const mk = (i, x, y, w, h, b, t, r, d, body, extra) => {
+      tri[i] = t === 1
+        ? `<t x="${r1(x)}" y="${r1(y)}" w="${Math.round(w)}" h="${Math.round(h)}" a="0" b="${b}" t="1" r="${r}" sd="f" d="${dnum(d)}">\n${body.join('\n')}\n</t>`
+        : `<t x="${r1(x)}" y="${r1(y)}" w="${Math.round(w)}" h="${Math.round(h)}" a="0" b="${b}" t="${p.tSound || 2}" r="${r}" sd="f" s="${extra.s}" d="${dnum(d)}" l="${p.sndL === undefined ? 1 : p.sndL}" p="${p.sndP === undefined ? 0 : p.sndP}" v="${extra.v}"/>`;
+    };
+
+    // start trigger S (index 0) -> activates P (index 1)
+    let sx, sy, sw = 120, sh = 100, sb, sr = 1, slab;
+    if (st.type === 'auto') { sx = spawn[0]; sy = spawn[1]; sw = st.w || 260; sh = st.h || 260; sb = bP; slab = 'START: automatic (zone on the spawn point)'; }
+    else if (st.type === 'click') { sx = cx + (st.dx || 0); sy = fy - 45 + (st.dy || 0); sw = 90; sh = 50; sb = bC; slab = 'START: click the button'; }
+    else { sx = cx + (st.dx === undefined ? -150 : st.dx); sy = fy + (sc.floor ? 160 : 40) + (st.dy || 0); sw = 40; sh = 40; sb = bT; sr = 2; slab = 'START: not connected. Activate it from one of your triggers'; }
+    mk(0, sx, sy, sw, sh, sb, 1, sr, 0, [tact(1)]);
+    lay.push({ k: 'start', x: sx - sw / 2, y: sy - sh / 2, w: sw, h: sh, l: slab });
+    label(sx, sy + sh / 2 + 12, slab, 9, 0xff6a4a);
+    if (st.type === 'click' && st.button !== false) {
+      rect(sx, sy, 90, 50, 0xc81414, false);
+      shapes.push(artXml([[sx - 12, sy - 16], [sx + 18, sy], [sx - 12, sy + 16]], 0xffffff, id++)); art++;
+    }
+    // player trigger P (index 1): the real "start playing" action
+    const body = (j) => { const b = []; if (j + 1 < J) b.push(tact(iR[j + 1])); if (loop && jE === j) b.push(tact(iE)); segTargets[j].forEach((t) => b.push(tact(t))); return b; };
+    mk(1, gx0 + 8, gy0 + 40, 12, 12, bT, 1, 2, 0, body(0));
+    for (let j = 1; j < J; j++) { const [x, y] = cell(iR[j]); mk(iR[j], x, y, 12, 12, bT, 1, rT, L, body(j)); }
+    if (loop) { const [x, y] = cell(iE); mk(iE, x, y, 12, 12, bT, 1, rT, Math.max(0, endT - (L === Infinity ? 0 : jE * L)), [tact(1)]); }
+    const volOf = (e) => (p.velVol ? Math.max(0.1, Math.min(1, Math.round(e.vel / 127 * 100) / 100)) : (p.volume === undefined ? 1 : p.volume));
+    slots.forEach((s, k) => {
+      const j = segOf(s.t), rel = Math.max(0, s.t - (L === Infinity ? 0 : j * L));
+      if (!direct) { const [x, y] = cell(slotIdx[k]); mk(slotIdx[k], x, y, 12, 12, bT, 1, rT, rel, soundIdx[k].map(tact)); }
+      s.ev.forEach((e, q) => { const [x, y] = cell(soundIdx[k][q]); mk(soundIdx[k][q], x, y, 12, 12, bT, 2, rT, direct ? rel : 0, null, { s: e.id + (p.sOff || 0), v: volOf(e) }); });
+    });
+    for (let i = 0; i < total; i++) trig.push(tri[i]);
+    const rows = Math.max(1, Math.ceil((total - 2) / cols));
+    lay.push({ k: 'grid', x: gx0, y: gy0 + 90, w: Math.min(cols, Math.max(1, total - 2)) * pitch, h: rows * pitch, l: 'trigger machinery (' + total + ' triggers)' });
+    label(cx, gy0 + 62, 'MUSIC TRIGGERS: ' + total + ' (do not move or delete)', 9, 0xff6a4a);
+
+    const pieces = { shapes, specials, groups, trig };
+    const base = `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${r1(spawn[0])}" y="${r1(spawn[1])}" c="${p.vehicle || 1}" f="t" h="f" bg="0" bgc="1710618" e="1"/>\n</levelXML>\n`;
+    const xml = mergeLevel(base, pieces);
+    return { xml, pieces, triggers: trig.length, slots: slots.length, sounds: events.length, relays: J - 1, segments: J, duration: loop ? endT : lastT, loop, art, lay, spawn, floor: fy, cols, direct };
+  }
+
+  /* number of triggers build() would create (same index plan, no XML) */
+  function countTriggers(events, p) {
+    const en = p.end || { type: 'loop', gap: 0.5 };
+    let nSlots = 0, lastT = 0, prev = null; for (const e of events) { if (prev === null || e.t !== prev) nSlots++; prev = e.t; lastT = e.t; }
+    const loop = en.type === 'loop' && nSlots > 0, endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap);
+    const L = p.seg > 0 ? p.seg : Infinity, segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
+    let J = nSlots ? segOf(lastT) + 1 : 1; if (loop) J = Math.max(J, segOf(endT) + 1);
+    return 2 + (J - 1) + (loop ? 1 : 0) + (p.direct ? 0 : nSlots) + events.length;
+  }
+  /* keeps the longest prefix of the song whose trigger count (start/play/relays/loop included) fits max */
+  function fitTriggers(events, p, max) {
+    if (!(max > 0) || countTriggers(events, p) <= max) return { events, cut: 0, fixed: countTriggers([], p) };
+    let lo = 0, hi = events.length;                       // largest k with count(events[0..k]) <= max
+    while (lo < hi) { const m = (lo + hi + 1) >> 1; if (countTriggers(events.slice(0, m), p) <= max) lo = m; else hi = m - 1; }
+    return { events: events.slice(0, lo), cut: events.length - lo, fixed: countTriggers([], p) };
+  }
+  // ------------------------------------------------------------------ merge into an existing level
+  function inspectLevel(L) {
+    const sec = (n) => { const m = new RegExp('<' + n + '\\b[^>]*>([\\s\\S]*?)</' + n + '>').exec(L); return m ? m[1] : ''; };
+    const ids = [...L.matchAll(/<v\b[^>]*?\bid="(-?\d+)"/g)].map((m) => +m[1]);
+    const info = /<info\b[^>]*>/.exec(L), num = (k) => { const m = info && new RegExp('\\b' + k + '="(-?[\\d.]+)"').exec(info[0]); return m ? +m[1] : null; };
+    return { valid: /<levelXML[\s>]/.test(L) && /<\/levelXML>/.test(L), idBase: ids.length ? Math.max(...ids) + 1 : 0,
+      groups: (sec('groups').match(/<g\s+x=/g) || []).length, trigs: (sec('triggers').match(/<t\s+x=/g) || []).length,
+      art: (L.match(/<sh\b[^>]*\bi="f"/g) || []).length, x: num('x'), y: num('y') };
+  }
+  function mergeLevel(L, pc) {
+    const ind = (arr) => arr.join('\n').split('\n').map((l) => '        ' + l).join('\n');
+    const ORDER = ['shapes', 'specials', 'groups', 'joints', 'triggers'];
+    const add = (name, arr) => {
+      if (!arr.length) return;
+      const body = ind(arr);
+      if (new RegExp('</' + name + '>').test(L)) { L = L.replace(new RegExp('</' + name + '>'), () => body + '\n    </' + name + '>'); return; }
+      const blk = `    <${name}>\n${body}\n    </${name}>\n`;
+      L = L.replace(new RegExp('<' + name + '\\s*/>[ \\t]*\\n?'), () => blk);
+      if (L.includes(blk)) return;
+      const prev = ORDER.slice(0, ORDER.indexOf(name)).reverse();
+      for (const q of prev.map((n) => new RegExp('</' + n + '>[ \\t]*\\n?')).concat([/<info\b[^>]*\/>[ \t]*\n?/])) {
+        if (q.test(L)) { L = L.replace(q, (m) => m.replace(/\n?$/, '\n') + blk); return; }
+      }
+      L = L.replace(/<levelXML>/, '<levelXML>\n' + blk);
+    };
+    ORDER.forEach((n) => { if (n !== 'joints') add(n, pc[n === 'triggers' ? 'trig' : n]); });
+    return L;
+  }
+  return { countTriggers, fitTriggers, parseMidi, makeEvents, bandEdges, soundFor, noteKey, noteName, build, inspectLevel, mergeLevel, GM, DRUM_GROUP };
+})();
+if (typeof module !== 'undefined') module.exports = HWMusic;
+
+</script>
+<script>
+const SOUNDS=[{"id":255,"g":"Air","n":"air jump","d":"(Vehicle jumping) (Segway, shopping cart and mower)","u":"https://static.wikia.nocookie.net/happywheels/images/f/fd/Air_jump.mp3","v":1},{"id":274,"g":"Air","n":"heavy woosh","d":"(Wrecking Ball when it passes)","u":"https://static.wikia.nocookie.net/happywheels/images/4/41/Heavy_woosh.mp3","v":1},{"id":288,"g":"Air","n":"swish 1","d":"(Unused)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2b/Swish_1.mp3","v":1},{"id":289,"g":"Air","n":"swish 2","d":"(Placing cursor over an option in the title screen)","u":"https://static.wikia.nocookie.net/happywheels/images/7/77/Swish_2.mp3","v":1},{"id":0,"g":"Character voices","n":"wg voice 1","d":"(\"Questioning\" Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/f/f2/Wg_voice_1.mp3","v":1},{"id":1,"g":"Character voices","n":"wg voice 2","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/0/02/Wg_voice_2.mp3","v":1},{"id":2,"g":"Character voices","n":"wg voice 3","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/1/10/Wg_voice_3.mp3","v":1},{"id":3,"g":"Character voices","n":"wg voice 4","d":"(Partial scream)","u":"https://static.wikia.nocookie.net/happywheels/images/3/38/Wg_voice_4.mp3","v":1},{"id":4,"g":"Character voices","n":"wg voice 5","d":"[(Aaaarh!) Partial scream]","u":"https://static.wikia.nocookie.net/happywheels/images/6/66/Wg_voice_5.mp3","v":1},{"id":5,"g":"Character voices","n":"wg voice 6","d":"[(Weeehr!) Partial scream]","u":"https://static.wikia.nocookie.net/happywheels/images/c/c5/Wg_voice_6.mp3","v":1},{"id":6,"g":"Character voices","n":"wg voice 7","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/4/45/Wg_voice_7.mp3","v":1},{"id":7,"g":"Character voices","n":"wg voice 8","d":"[(G'oh!) cry]","u":"https://static.wikia.nocookie.net/happywheels/images/2/26/Wg_voice_8.mp3","v":1},{"id":8,"g":"Character voices","n":"wg voice 9","d":"[(Oh, my leg!) Scream]","u":"https://static.wikia.nocookie.net/happywheels/images/3/33/Wg_voice_9.mp3","v":1},{"id":9,"g":"Character voices","n":"wg voice 10","d":"[(Ugh!) Grunt]","u":"https://static.wikia.nocookie.net/happywheels/images/4/4f/Wg_voice_10.mp3","v":1},{"id":10,"g":"Character voices","n":"wg voice 11","d":"(Pelvis destroyed)","u":"https://static.wikia.nocookie.net/happywheels/images/4/42/Wg_voice_11.mp3","v":1},{"id":11,"g":"Character voices","n":"wg voice 12","d":"(Ripped in half)","u":"https://static.wikia.nocookie.net/happywheels/images/8/85/Wg_voice_12.mp3","v":1},{"id":12,"g":"Character voices","n":"wg voice 13","d":"[(Save me!) Scream]","u":"https://static.wikia.nocookie.net/happywheels/images/d/dc/Wg_voice_13.mp3","v":1},{"id":13,"g":"Character voices","n":"sg voice 1","d":"(Ow!)","u":"https://static.wikia.nocookie.net/happywheels/images/3/3e/Sg_voice_1.mp3","v":1},{"id":14,"g":"Character voices","n":"sg voice 2","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/5/5f/Sg_voice_2.mp3","v":1},{"id":15,"g":"Character voices","n":"sg voice 3","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/9/98/Sg_voice_3.mp3","v":1},{"id":16,"g":"Character voices","n":"sg voice 4","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/6/61/Sg_voice_4.mp3","v":1},{"id":17,"g":"Character voices","n":"sg voice 5","d":"(Augh!)","u":"https://static.wikia.nocookie.net/happywheels/images/d/d0/Sg_voice_5.mp3","v":1},{"id":18,"g":"Character voices","n":"sg voice 6","d":"(Partial scream)","u":"https://static.wikia.nocookie.net/happywheels/images/f/f9/Sg_voice_6.mp3","v":1},{"id":19,"g":"Character voices","n":"sg voice 7","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/e/e7/Sg_voice_7.mp3","v":1},{"id":20,"g":"Character voices","n":"sg voice 8","d":"(Hit)","u":"https://static.wikia.nocookie.net/happywheels/images/a/af/Sg_voice_8.mp3","v":1},{"id":21,"g":"Character voices","n":"sg voice 9","d":"[(Wooooo!) Joint breaks off]","u":"https://static.wikia.nocookie.net/happywheels/images/f/fa/Sg_voice_9.mp3","v":1},{"id":22,"g":"Character voices","n":"sg voice 10","d":"[(Uuuuurgh!) Joint breaks off]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f8/Sg_voice_10.mp3","v":1},{"id":23,"g":"Character voices","n":"sg voice 11","d":"[(Eeeeeeh-aah!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/5/5d/Sg_voice_11.mp3","v":1},{"id":24,"g":"Character voices","n":"sg voice 12","d":"[(Aaaaaaaaaaah!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/3/33/Sg_voice_12.mp3","v":1},{"id":25,"g":"Character voices","n":"sg voice 13","d":"[(Ooooh!) Grunt]","u":"https://static.wikia.nocookie.net/happywheels/images/c/cf/Sg_voice_13.mp3","v":1},{"id":26,"g":"Character voices","n":"id voice 1","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/d/d1/Id_voice_1.mp3","v":1},{"id":27,"g":"Character voices","n":"id voice 2","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/0/0b/Id_voice_2.mp3","v":1},{"id":28,"g":"Character voices","n":"id voice 3","d":"(Partial scream)","u":"https://static.wikia.nocookie.net/happywheels/images/4/4d/Id_voice_3.mp3","v":1},{"id":29,"g":"Character voices","n":"id voice 4","d":"(Partial scream)","u":"https://static.wikia.nocookie.net/happywheels/images/4/48/Id_voice_4.mp3","v":1},{"id":30,"g":"Character voices","n":"id voice 5","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/4/44/Id_voice_5.mp3","v":1},{"id":31,"g":"Character voices","n":"id voice 6","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/9/9b/Id_voice_6.mp3","v":1},{"id":32,"g":"Character voices","n":"id voice 7","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/8/89/Id_voice_7.mp3","v":1},{"id":33,"g":"Character voices","n":"id voice 8","d":"(Ow!)","u":"https://static.wikia.nocookie.net/happywheels/images/3/33/Id_voice_8.mp3","v":1},{"id":34,"g":"Character voices","n":"id voice 9","d":"(Ah!)","u":"https://static.wikia.nocookie.net/happywheels/images/6/60/Id_voice_9.mp3","v":1},{"id":35,"g":"Character voices","n":"id voice 10","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/5/50/Id_voice_10.mp3","v":1},{"id":36,"g":"Character voices","n":"id voice 11","d":"[(Oooooh!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f3/Id_voice_11.mp3","v":1},{"id":37,"g":"Character voices","n":"id voice 12","d":"[(Oh, God!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f4/Id_voice_12.mp3","v":1},{"id":38,"g":"Character voices","n":"id voice 13","d":"[(Aaah!) Scream]","u":"https://static.wikia.nocookie.net/happywheels/images/5/5e/Id_voice_13.mp3","v":1},{"id":39,"g":"Character voices","n":"id voice 14","d":"[(Damn it!) Irresponsible Son dies]","u":"https://static.wikia.nocookie.net/happywheels/images/d/d6/Id_voice_14.mp3","v":1},{"id":40,"g":"Character voices","n":"son voice 1","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/0/0e/Son_voice_1.mp3","v":1},{"id":41,"g":"Character voices","n":"son voice 2","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/3/34/Son_voice_2.mp3","v":1},{"id":42,"g":"Character voices","n":"son voice 3","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/1/1c/Son_voice_3.mp3","v":1},{"id":43,"g":"Character voices","n":"son voice 4","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2a/Son_voice_4.mp3","v":1},{"id":44,"g":"Character voices","n":"son voice 5","d":"[(AUGH!) Pain]","u":"https://static.wikia.nocookie.net/happywheels/images/2/2d/Son_voice_5.mp3","v":1},{"id":45,"g":"Character voices","n":"son voice 6","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/5/50/Son_voice_6.mp3","v":1},{"id":46,"g":"Character voices","n":"son voice 7","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/e/e7/Son_voice_7.mp3","v":1},{"id":47,"g":"Character voices","n":"son voice 8","d":"(cry)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b0/Son_voice_8.mp3","v":1},{"id":48,"g":"Character voices","n":"son voice 9","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b4/Son_voice_9.mp3","v":1},{"id":49,"g":"Character voices","n":"son voice 10","d":"[(OWW!) Severe pain)]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f6/Son_voice_10.mp3","v":1},{"id":50,"g":"Character voices","n":"son voice 11","d":"[(Choke) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/c/c5/Son_voice_11.mp3","v":1},{"id":51,"g":"Character voices","n":"son voice 12","d":"[(AAAAAAAAAAAH!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/7/77/Son_voice_12.mp3","v":1},{"id":52,"g":"Character voices","n":"son voice 13","d":"[(OOOOH!) Severe pain]","u":"https://static.wikia.nocookie.net/happywheels/images/a/a8/Son_voice_13.mp3","v":1},{"id":53,"g":"Character voices","n":"es voice 1","d":"(Mhh!)","u":"https://static.wikia.nocookie.net/happywheels/images/9/9f/Es_voice_1.mp3","v":1},{"id":54,"g":"Character voices","n":"es voice 2","d":"(Ehh!)","u":"https://static.wikia.nocookie.net/happywheels/images/e/e6/Es_voice_2.mp3","v":1},{"id":55,"g":"Character voices","n":"es voice 3","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/d/dc/Es_voice_3.mp3","v":1},{"id":56,"g":"Character voices","n":"es voice 4","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/1/15/Es_voice_4.mp3","v":1},{"id":57,"g":"Character voices","n":"es voice 5","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/5/5b/Es_voice_5.mp3","v":1},{"id":58,"g":"Character voices","n":"es voice 6","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/e/ec/Es_voice_6.mp3","v":1},{"id":59,"g":"Character voices","n":"es voice 7","d":"[(OOOOOOOHHHHH!) Scream]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f7/Es_voice_7.mp3","v":1},{"id":60,"g":"Character voices","n":"es voice 8","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/3/32/Es_voice_8.mp3","v":1},{"id":61,"g":"Character voices","n":"es voice 9","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b1/Es_voice_9.mp3","v":1},{"id":62,"g":"Character voices","n":"es voice 10","d":"[(OOOOOOOWWWWWWWW !) Scream]","u":"https://static.wikia.nocookie.net/happywheels/images/9/96/Es_voice_10.mp3","v":1},{"id":63,"g":"Character voices","n":"es voice 11","d":"(Pelvis destroyed)","u":"https://static.wikia.nocookie.net/happywheels/images/3/36/Es_voice_11.mp3","v":1},{"id":64,"g":"Character voices","n":"es voice 12","d":"(Ripped in half)","u":"https://static.wikia.nocookie.net/happywheels/images/5/56/Es_voice_12.mp3","v":1},{"id":65,"g":"Character voices","n":"es voice 13","d":"(Eh-heh!)","u":"https://static.wikia.nocookie.net/happywheels/images/2/27/Es_voice_13.mp3","v":1},{"id":66,"g":"Character voices","n":"mo1 voice 1","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/6/6c/Mo1_voice_1.mp3","v":1},{"id":67,"g":"Character voices","n":"mo1 voice 2","d":"(\"Gasping\" Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/d/de/Mo1_voice_2.mp3","v":1},{"id":68,"g":"Character voices","n":"mo1 voice 3","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2b/Mo1_voice_3.mp3","v":1},{"id":69,"g":"Character voices","n":"mo1 voice 4","d":"(No!)","u":"https://static.wikia.nocookie.net/happywheels/images/b/be/Mo1_voice_4.mp3","v":1},{"id":70,"g":"Character voices","n":"mo1 voice 5","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/d/dd/Mo1_voice_5.mp3","v":1},{"id":71,"g":"Character voices","n":"mo1 voice 6","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/2/22/Mo1_voice_6.mp3","v":1},{"id":72,"g":"Character voices","n":"mo1 voice 7","d":"[(Aaaah!) Scream]","u":"https://static.wikia.nocookie.net/happywheels/images/2/2d/Mo1_voice_7.mp3","v":1},{"id":73,"g":"Character voices","n":"mo1 voice 8","d":"[(Meehaha!) cry]","u":"https://static.wikia.nocookie.net/happywheels/images/6/6b/Mo1_voice_8.mp3","v":1},{"id":74,"g":"Character voices","n":"mo1 voice 9","d":"[(Ooooh, hoo-hoo!) Severe pain]","u":"https://static.wikia.nocookie.net/happywheels/images/a/a5/Mo1_voice_9.mp3","v":1},{"id":75,"g":"Character voices","n":"mo1 voice 10","d":"[(Ah-huh!) Severe pain]","u":"https://static.wikia.nocookie.net/happywheels/images/a/a0/Mo1_voice_10.mp3","v":1},{"id":76,"g":"Character voices","n":"mo1 voice 11","d":"[(Weeeeeheh!) (Pelvis destroyed)]","u":"https://static.wikia.nocookie.net/happywheels/images/c/ce/Mo1_voice_11.mp3","v":1},{"id":77,"g":"Character voices","n":"mo1 voice 12","d":"[(Beeehh-aaah!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/a/a1/Mo1_voice_12.mp3","v":1},{"id":78,"g":"Character voices","n":"mo1 voice 13","d":"[(Behh!) Grunt]","u":"https://static.wikia.nocookie.net/happywheels/images/5/58/Mo1_voice_13.mp3","v":1},{"id":79,"g":"Character voices","n":"mo2 voice 1","d":"(Aahg!)","u":"https://static.wikia.nocookie.net/happywheels/images/3/33/Mo2_voice_1.mp3","v":1},{"id":80,"g":"Character voices","n":"mo2 voice 2","d":"(Oof!)","u":"https://static.wikia.nocookie.net/happywheels/images/e/e6/Mo2_voice_2.mp3","v":1},{"id":81,"g":"Character voices","n":"mo2 voice 3","d":"(Ugh!)","u":"https://static.wikia.nocookie.net/happywheels/images/d/d5/Mo2_voice_3.mp3","v":1},{"id":82,"g":"Character voices","n":"mo2 voice 4","d":"(Ha!)","u":"https://static.wikia.nocookie.net/happywheels/images/3/36/Mo2_voice_4.mp3","v":1},{"id":83,"g":"Character voices","n":"mo2 voice 5","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/a/af/Mo2_voice_5.mp3","v":1},{"id":84,"g":"Character voices","n":"mo2 voice 6","d":"(Ow!)","u":"https://static.wikia.nocookie.net/happywheels/images/a/a4/Mo2_voice_6.mp3","v":1},{"id":85,"g":"Character voices","n":"mo2 voice 7","d":"(OooooH!)","u":"https://static.wikia.nocookie.net/happywheels/images/c/cd/Mo2_voice_7.mp3","v":1},{"id":86,"g":"Character voices","n":"mo2 voice 8","d":"(Scream)","u":"https://static.wikia.nocookie.net/happywheels/images/0/06/Mo2_voice_8.mp3","v":1},{"id":87,"g":"Character voices","n":"mo2 voice 9","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/1/1e/Mo2_voice_9.mp3","v":1},{"id":88,"g":"Character voices","n":"mo2 voice 10","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/b/bb/Mo2_voice_10.mp3","v":1},{"id":89,"g":"Character voices","n":"mo2 voice 11","d":"[(NOOOOOO!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/a/ae/Mo2_voice_11.mp3","v":1},{"id":90,"g":"Character voices","n":"mo2 voice 12","d":"[(OH, GOD!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/3/33/Mo2_voice_12.mp3","v":1},{"id":91,"g":"Character voices","n":"mo2 voice 13","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b9/Mo2_voice_13.mp3","v":1},{"id":92,"g":"Character voices","n":"mo2 voice 14","d":"(WHYYYY???!) (Moped Guy dies)","u":"https://static.wikia.nocookie.net/happywheels/images/1/1e/Mo2_voice_14.mp3","v":1},{"id":93,"g":"Character voices","n":"lm voice 1","d":"(AUH!)","u":"https://static.wikia.nocookie.net/happywheels/images/f/f5/Lm_voice_1.mp3","v":1},{"id":94,"g":"Character voices","n":"lm voice 2","d":"(DURISH!)","u":"https://static.wikia.nocookie.net/happywheels/images/1/18/Lm_voice_2.mp3","v":1},{"id":95,"g":"Character voices","n":"lm voice 3","d":"(OH!)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b6/Lm_voice_3.mp3","v":1},{"id":96,"g":"Character voices","n":"lm voice 4","d":"(JUH!)","u":"https://static.wikia.nocookie.net/happywheels/images/d/d2/Lm_voice_4.mp3","v":1},{"id":97,"g":"Character voices","n":"lm voice 5","d":"(OW!)","u":"https://static.wikia.nocookie.net/happywheels/images/a/ad/Lm_voice_5.mp3","v":1},{"id":98,"g":"Character voices","n":"lm voice 6","d":"(AHUH!)","u":"https://static.wikia.nocookie.net/happywheels/images/0/0b/Lm_voice_6.mp3","v":1},{"id":99,"g":"Character voices","n":"lm voice 7","d":"(YEOOOW!)","u":"https://static.wikia.nocookie.net/happywheels/images/4/4e/Lm_voice_7.mp3","v":1},{"id":100,"g":"Character voices","n":"lm voice 8","d":"(OOOOWWW!)","u":"https://static.wikia.nocookie.net/happywheels/images/e/eb/Lm_voice_8.mp3","v":1},{"id":101,"g":"Character voices","n":"lm voice 9","d":"(OH GOD!)","u":"https://static.wikia.nocookie.net/happywheels/images/7/73/Lm_voice_9.mp3","v":1},{"id":102,"g":"Character voices","n":"lm voice 10","d":"(WUOHOHOHOHO!)","u":"https://static.wikia.nocookie.net/happywheels/images/3/3a/Lm_voice_10.mp3","v":1},{"id":103,"g":"Character voices","n":"lm voice 11","d":"[(NNNOOOOOO!!!!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f9/Lm_voice_11.mp3","v":1},{"id":104,"g":"Character voices","n":"lm voice 12","d":"[(DUaaaAAaaaaAARRH!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/b/b2/Lm_voice_12.mp3","v":1},{"id":105,"g":"Character voices","n":"lm voice 13","d":"(AHHaaAAH!)","u":"https://static.wikia.nocookie.net/happywheels/images/f/f8/Lm_voice_13.mp3","v":1},{"id":106,"g":"Character voices","n":"sc voice 1","d":"(Ho!) (worried way)","u":"https://static.wikia.nocookie.net/happywheels/images/6/6f/Sc_voice_1.mp3","v":1},{"id":107,"g":"Character voices","n":"sc voice 2","d":"(Ho!)","u":"https://static.wikia.nocookie.net/happywheels/images/b/bd/Sc_voice_2.mp3","v":1},{"id":108,"g":"Character voices","n":"sc voice 3","d":"(Ow!)","u":"https://static.wikia.nocookie.net/happywheels/images/9/99/Sc_voice_3.mp3","v":1},{"id":109,"g":"Character voices","n":"sc voice 4","d":"(Oh!)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2b/Sc_voice_4.mp3","v":1},{"id":110,"g":"Character voices","n":"sc voice 5","d":"(OW!)","u":"https://static.wikia.nocookie.net/happywheels/images/0/09/Sc_voice_5.mp3","v":1},{"id":111,"g":"Character voices","n":"sc voice 6","d":"(Clears throat)","u":"https://static.wikia.nocookie.net/happywheels/images/7/75/Sc_voice_6.mp3","v":1},{"id":112,"g":"Character voices","n":"sc voice 7","d":"(Ho!)","u":"https://static.wikia.nocookie.net/happywheels/images/8/85/Sc_voice_7.mp3","v":1},{"id":113,"g":"Character voices","n":"sc voice 8","d":"(Ooh!)","u":"https://static.wikia.nocookie.net/happywheels/images/a/a0/Sc_voice_8.mp3","v":1},{"id":114,"g":"Character voices","n":"sc voice 9","d":"(Ruuh!)","u":"https://static.wikia.nocookie.net/happywheels/images/d/d2/Sc_voice_9.mp3","v":1},{"id":115,"g":"Character voices","n":"sc voice 10","d":"(Aaah!)","u":"https://static.wikia.nocookie.net/happywheels/images/1/1e/Sc_voice_10.mp3","v":1},{"id":116,"g":"Character voices","n":"sc voice 11","d":"[(Vomiting) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/6/6f/Sc_voice_11.mp3","v":1},{"id":117,"g":"Character voices","n":"sc voice 12","d":"[(Hooohoooohohohohooo!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/4/45/Sc_voice_12.mp3","v":1},{"id":118,"g":"Character voices","n":"sc voice 13","d":"(Clearing throat sound)","u":"https://static.wikia.nocookie.net/happywheels/images/c/ca/Sc_voice_13.mp3","v":1},{"id":119,"g":"Character voices","n":"sc voice 14","d":"(Ho, ho, ho!) (Happy, Elf 1's death)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2d/Sc_voice_14.mp3","v":1},{"id":120,"g":"Character voices","n":"sc voice 15","d":"(HO HO HO!) (Happy, Elf 2's death)","u":"https://static.wikia.nocookie.net/happywheels/images/a/a1/Sc_voice_15.mp3","v":1},{"id":121,"g":"Character voices","n":"elf voice 1","d":"(cry)","u":"https://static.wikia.nocookie.net/happywheels/images/0/05/Elf_voice_1.mp3","v":1},{"id":122,"g":"Character voices","n":"elf voice 2","d":"(cry)","u":"https://static.wikia.nocookie.net/happywheels/images/e/ea/Elf_voice_2.mp3","v":1},{"id":123,"g":"Character voices","n":"elf voice 3","d":"(cry)","u":"https://static.wikia.nocookie.net/happywheels/images/3/35/Elf_voice_3.mp3","v":1},{"id":124,"g":"Character voices","n":"elf voice 4","d":"(cry)","u":"https://static.wikia.nocookie.net/happywheels/images/8/8e/Elf_voice_4.mp3","v":1},{"id":125,"g":"Character voices","n":"elf voice 5","d":"(scream)","u":"https://static.wikia.nocookie.net/happywheels/images/d/dc/Elf_voice_5.mp3","v":1},{"id":126,"g":"Character voices","n":"elf voice 6","d":"(UGH!)","u":"https://static.wikia.nocookie.net/happywheels/images/5/5e/Elf_voice_6.mp3","v":1},{"id":127,"g":"Character voices","n":"elf voice 7","d":"(severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/3/39/Elf_voice_7.mp3","v":1},{"id":128,"g":"Character voices","n":"elf voice 8","d":"(\"Questioning\" cry)","u":"https://static.wikia.nocookie.net/happywheels/images/0/0f/Elf_voice_8.mp3","v":1},{"id":129,"g":"Character voices","n":"elf voice 9","d":"(No!)","u":"https://static.wikia.nocookie.net/happywheels/images/c/cc/Elf_voice_9.mp3","v":1},{"id":130,"g":"Character voices","n":"elf voice 10","d":"(severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/9/92/Elf_voice_10.mp3","v":1},{"id":131,"g":"Character voices","n":"elf voice 11","d":"[(Oh, God!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/b/b7/Elf_voice_11.mp3","v":1},{"id":132,"g":"Character voices","n":"elf voice 12","d":"(ripped in half)","u":"https://static.wikia.nocookie.net/happywheels/images/2/22/Elf_voice_12.mp3","v":1},{"id":133,"g":"Character voices","n":"elf voice 13","d":"(severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/0/02/Elf_voice_13.mp3","v":1},{"id":134,"g":"Character voices","n":"pm voice 1","d":"(Gaahg!)","u":"https://static.wikia.nocookie.net/happywheels/images/3/34/Pm_voice_1.mp3","v":1},{"id":135,"g":"Character voices","n":"pm voice 2","d":"(Ow, my foot!)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b4/Pm_voice_2.mp3","v":1},{"id":136,"g":"Character voices","n":"pm voice 3","d":"(Ow, my ar-hrm!)","u":"https://static.wikia.nocookie.net/happywheels/images/8/89/Pm_voice_3.mp3","v":1},{"id":137,"g":"Character voices","n":"pm voice 4","d":"(Dammit!)","u":"https://static.wikia.nocookie.net/happywheels/images/f/f3/Pm_voice_4.mp3","v":1},{"id":138,"g":"Character voices","n":"pm voice 5","d":"(Ooooooh!)","u":"https://static.wikia.nocookie.net/happywheels/images/1/15/Pm_voice_5.mp3","v":1},{"id":139,"g":"Character voices","n":"pm voice 6","d":"(Noooo!)","u":"https://static.wikia.nocookie.net/happywheels/images/e/ef/Pm_voice_6.mp3","v":1},{"id":140,"g":"Character voices","n":"pm voice 7","d":"(Woo-ha-ha!)","u":"https://static.wikia.nocookie.net/happywheels/images/b/ba/Pm_voice_7.mp3","v":1},{"id":141,"g":"Character voices","n":"pm voice 8","d":"(Oh, no-ho!)","u":"https://static.wikia.nocookie.net/happywheels/images/5/51/Pm_voice_8.mp3","v":1},{"id":142,"g":"Character voices","n":"pm voice 9","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/f/fd/Pm_voice_9.mp3","v":1},{"id":143,"g":"Character voices","n":"pm voice 10","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/2/22/Pm_voice_10.mp3","v":1},{"id":144,"g":"Character voices","n":"pm voice 11","d":"[(Aaaaaaaaaaaaaaaaaargh!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/7/71/Pm_voice_11.mp3","v":1},{"id":145,"g":"Character voices","n":"pm voice 12","d":"[(Ooooooh, huh-ho!) Ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/b/b4/Pm_voice_12.mp3","v":1},{"id":146,"g":"Character voices","n":"pm voice 13","d":"(Oh, my god!)","u":"https://static.wikia.nocookie.net/happywheels/images/5/5c/Pm_voice_13.mp3","v":1},{"id":293,"g":"Character voices","n":"girl voice 1","d":"[(MHH!) Pain]","u":"https://static.wikia.nocookie.net/happywheels/images/a/a2/Girl_voice_1.mp3","v":1},{"id":294,"g":"Character voices","n":"girl voice 2","d":"[(EHH!) Pain]","u":"https://static.wikia.nocookie.net/happywheels/images/f/f9/Girl_voice_2.mp3","v":1},{"id":295,"g":"Character voices","n":"girl voice 3","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/8/86/Girl_voice_3.mp3","v":1},{"id":296,"g":"Character voices","n":"girl voice 4","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/4/44/Girl_voice_4.mp3","v":1},{"id":297,"g":"Character voices","n":"girl voice 5","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/2/22/Girl_voice_5.mp3","v":1},{"id":298,"g":"Character voices","n":"girl voice 6","d":"(Pain)","u":"https://static.wikia.nocookie.net/happywheels/images/7/7f/Girl_voice_6.mp3","v":1},{"id":299,"g":"Character voices","n":"girl voice 7","d":"[(OOOOOOOHHHHH!) Severe pain]","u":"https://static.wikia.nocookie.net/happywheels/images/3/3b/Girl_voice_7.mp3","v":1},{"id":300,"g":"Character voices","n":"girl voice 8","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/5/55/Girl_voice_8.mp3","v":1},{"id":301,"g":"Character voices","n":"girl voice 9","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/3/31/Girl_voice_9.mp3","v":1},{"id":302,"g":"Character voices","n":"girl voice 10","d":"[(OOOOOOOWWWWWWWW !) Severe pain]","u":"https://static.wikia.nocookie.net/happywheels/images/9/91/Girl_voice_10.mp3","v":1},{"id":303,"g":"Character voices","n":"girl voice 11","d":"(Pelvis destroyed)","u":"https://static.wikia.nocookie.net/happywheels/images/d/df/Girl_voice_11.mp3","v":1},{"id":304,"g":"Character voices","n":"girl voice 12","d":"(Ripped in half)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2d/Girl_voice_12.mp3","v":1},{"id":305,"g":"Character voices","n":"girl voice 13","d":"(Eh-HEH!)","u":"https://static.wikia.nocookie.net/happywheels/images/2/25/Girl_voice_13.mp3","v":1},{"id":308,"g":"Character voices","n":"hm voice 1","d":"(Ugh Ah!)","u":"https://static.wikia.nocookie.net/happywheels/images/7/77/Hm_voice_1.mp3","v":1},{"id":309,"g":"Character voices","n":"hm voice 2","d":"(Uuugh!)","u":"https://static.wikia.nocookie.net/happywheels/images/5/50/Hm_voice_2.mp3","v":1},{"id":310,"g":"Character voices","n":"hm voice 3","d":"(Grunt)","u":"https://static.wikia.nocookie.net/happywheels/images/c/ca/Hm_voice_3.mp3","v":1},{"id":311,"g":"Character voices","n":"hm voice 4","d":"(Naw!)","u":"https://static.wikia.nocookie.net/happywheels/images/0/0e/Hm_voice_4.mp3","v":1},{"id":312,"g":"Character voices","n":"hm voice 5","d":"(Nooooooo!)","u":"https://static.wikia.nocookie.net/happywheels/images/4/4b/Hm_voice_5.mp3","v":1},{"id":313,"g":"Character voices","n":"hm voice 6","d":"(Ooh no!)","u":"https://static.wikia.nocookie.net/happywheels/images/1/18/Hm_voice_6.mp3","v":1},{"id":314,"g":"Character voices","n":"hm voice 7","d":"(Don't watch!)","u":"https://static.wikia.nocookie.net/happywheels/images/f/f0/Hm_voice_7.mp3","v":1},{"id":315,"g":"Character voices","n":"hm voice 8","d":"(Baaaaaagh!)","u":"https://static.wikia.nocookie.net/happywheels/images/2/20/Hm_voice_8.mp3","v":1},{"id":316,"g":"Character voices","n":"hm voice 9","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/7/70/Hm_voice_9.mp3","v":1},{"id":317,"g":"Character voices","n":"hm voice 10","d":"(Severe pain)","u":"https://static.wikia.nocookie.net/happywheels/images/3/3f/Hm_voice_10.mp3","v":1},{"id":318,"g":"Character voices","n":"hm voice 11","d":"[(It blew my butt apart!) Pelvis destroyed]","u":"https://static.wikia.nocookie.net/happywheels/images/2/29/Hm_voice_11.mp3","v":1},{"id":319,"g":"Character voices","n":"hm voice 12","d":"[(WaaaaaaaaaaaaaAAAAAAAAAGH!) ripped in half]","u":"https://static.wikia.nocookie.net/happywheels/images/c/ca/Hm_voice_12.mp3","v":1},{"id":320,"g":"Character voices","n":"hm voice 13","d":"(No!)","u":"https://static.wikia.nocookie.net/happywheels/images/f/fc/Hm_voice_13.mp3","v":1},{"id":321,"g":"Character voices","n":"hm voice 14","d":"(Help!) (Propellers broken, dismounting autogyro)","u":"https://static.wikia.nocookie.net/happywheels/images/e/e3/Hm_voice_14.mp3","v":1},{"id":264,"g":"Electronic","n":"beep on","d":"(Homing Mine detecting a character or NPC)","u":"https://static.wikia.nocookie.net/happywheels/images/8/8e/Beep_on.mp3","v":1},{"id":265,"g":"Electronic","n":"beep off","d":"(Homing Mine losing visual with a character or NPC)","u":"https://static.wikia.nocookie.net/happywheels/images/1/17/Beep_off.mp3","v":1},{"id":279,"g":"Electronic","n":"ping","d":"(Pressing F in the Level Editor)","u":"https://static.wikia.nocookie.net/happywheels/images/2/2c/Ping.mp3","v":1},{"id":282,"g":"Electronic","n":"rapid beep","d":"(Homing Mine delay after touching a character or NPC)","u":"https://static.wikia.nocookie.net/happywheels/images/b/b3/Rapid_beep.mp3","v":1},{"id":286,"g":"Electronic","n":"select 1","d":"(Select character menu related)","u":"https://static.wikia.nocookie.net/happywheels/images/c/c4/Select_1.mp3","v":1},{"id":287,"g":"Electronic","n":"select 2","d":"(Unused)","u":"https://static.wikia.nocookie.net/happywheels/images/d/de/Select_2.mp3","v":1},{"id":202,"g":"Gore","n":"stab 1","d":"(Related to blade weapons or the propeller blades on the autogyro stabbing a character or food item)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_1.mp3","v":1},{"id":203,"g":"Gore","n":"stab 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_2.mp3","v":1},{"id":204,"g":"Gore","n":"stab 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_3.mp3","v":1},{"id":205,"g":"Gore","n":"stab 4","d":"(Harpoon stabbing character or food item)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_4.mp3","v":1},{"id":206,"g":"Gore","n":"stab 5","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_5.mp3","v":1},{"id":207,"g":"Gore","n":"stab 6","d":"(Harpoon stabbing a fixed object)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_6.mp3","v":1},{"id":208,"g":"Gore","n":"stab 7","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_7.mp3","v":1},{"id":209,"g":"Gore","n":"stab 8","d":"(Spike set , broken glass shard , or broken propeller blade on the autogyro stabbing a character or food item)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_8.mp3","v":1},{"id":210,"g":"Gore","n":"stab 9","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_9.mp3","v":1},{"id":211,"g":"Gore","n":"stab 10","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_10.mp3","v":1},{"id":212,"g":"Gore","n":"stab 11","d":"(Unused)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_11.mp3","v":1},{"id":213,"g":"Gore","n":"stab 12","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_12.mp3","v":1},{"id":214,"g":"Gore","n":"stab 13","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Stab_13.mp3","v":1},{"id":215,"g":"Gore","n":"bone snap 1","d":"(Related to pieces falling off of a character) (Lower legs, forearms, and feet)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Bone_snap_1.mp3","v":1},{"id":216,"g":"Gore","n":"bone snap 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Bone_snap_2.mp3","v":1},{"id":217,"g":"Gore","n":"bone snap 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Bone_snap_3.mp3","v":1},{"id":218,"g":"Gore","n":"bone snap 4","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Bone_snap_4.mp3","v":1},{"id":219,"g":"Gore","n":"burst 1","d":"(Related to explosion of character/intestine-area) (torso destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Burst_1.mp3","v":1},{"id":220,"g":"Gore","n":"burst 2","d":"(head destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Burst_2.mp3","v":1},{"id":221,"g":"Gore","n":"burst 3","d":"(pelvis destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Burst_3.mp3","v":1},{"id":222,"g":"Gore","n":"tear 1","d":"(Related to tearing limbs off) (Spine)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Tear_1.mp3","v":1},{"id":223,"g":"Gore","n":"tear 2","d":"(Arm or leg tendons)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Tear_2.mp3","v":1},{"id":224,"g":"Gore","n":"limb rip 1","d":"(Ripped in half)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Limb_rip_1.mp3","v":1},{"id":225,"g":"Gore","n":"limb rip 2","d":"(Upper arm breaking)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Limb_rip_2.mp3","v":1},{"id":226,"g":"Gore","n":"limb rip 3","d":"(Right upper leg)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Limb_rip_3.mp3","v":1},{"id":227,"g":"Gore","n":"limb rip 4","d":"(Left upper leg)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Limb_rip_4.mp3","v":1},{"id":228,"g":"Gore","n":"limb rip 5","d":"(Head coming off)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Limb_rip_5.mp3","v":1},{"id":229,"g":"Gore","n":"splat 1","d":"(food item)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Splat_1.mp3","v":1},{"id":230,"g":"Gore","n":"splat 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Splat_2.mp3","v":1},{"id":231,"g":"Gore","n":"splat 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Splat_3.mp3","v":1},{"id":168,"g":"Impacts","n":"metal impact 1","d":"(Generic noises used for anything metal-related) (metal part of a vehicle)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_1.mp3","v":1},{"id":169,"g":"Impacts","n":"metal impact 2","d":"(Shopping cart's, lawnmower's, and minecart's wheels)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_2.mp3","v":1},{"id":170,"g":"Impacts","n":"metal impact 3","d":"(Irresponsible Dad's booster seat that Irresponsible Son sits on)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_3.mp3","v":1},{"id":171,"g":"Impacts","n":"plastic impact 1","d":"(Boombox and Television)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Plastic_impact_1.mp3","v":1},{"id":172,"g":"Impacts","n":"metal impact 4","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_4.mp3","v":1},{"id":173,"g":"Impacts","n":"metal impact 5","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_5.mp3","v":1},{"id":174,"g":"Impacts","n":"metal impact 6","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_6.mp3","v":1},{"id":175,"g":"Impacts","n":"wood impact 1","d":"(Related to wood) (Log and Santa's sleigh)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_impact_1.mp3","v":1},{"id":176,"g":"Impacts","n":"wood impact 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_impact_2.mp3","v":1},{"id":177,"g":"Impacts","n":"metal impact 7","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_7.mp3","v":1},{"id":178,"g":"Impacts","n":"metal impact 8","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_8.mp3","v":1},{"id":179,"g":"Impacts","n":"porcelain impact 1","d":"(Toilet)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Porcelain_impact_1.mp3","v":1},{"id":180,"g":"Impacts","n":"porcelain impact 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Porcelain_impact_2.mp3","v":1},{"id":181,"g":"Impacts","n":"metal impact 9","d":"(Trash can)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_9.mp3","v":1},{"id":182,"g":"Impacts","n":"metal impact 10","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_10.mp3","v":1},{"id":183,"g":"Impacts","n":"plastic impact 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Plastic_impact_2.mp3","v":1},{"id":184,"g":"Impacts","n":"metal impact 11","d":"(Van)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_11.mp3","v":1},{"id":185,"g":"Impacts","n":"metal impact 12","d":"(Unused)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_12.mp3","v":1},{"id":186,"g":"Impacts","n":"metal impact 13","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_13.mp3","v":1},{"id":187,"g":"Impacts","n":"metal impact 14","d":"(i-beam)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_14.mp3","v":1},{"id":188,"g":"Impacts","n":"metal impact 15","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_15.mp3","v":1},{"id":189,"g":"Impacts","n":"wood impact 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_impact_3.mp3","v":1},{"id":190,"g":"Impacts","n":"wood impact 4","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_impact_4.mp3","v":1},{"id":191,"g":"Impacts","n":"wood impact 5","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_impact_5.mp3","v":1},{"id":192,"g":"Impacts","n":"metal impact 16","d":"(Snow runners of Santa's sleigh)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_16.mp3","v":1},{"id":193,"g":"Impacts","n":"metal impact 17","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_17.mp3","v":1},{"id":194,"g":"Impacts","n":"rubber impact 1","d":"(Unused)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Rubber_impact_1.mp3","v":1},{"id":195,"g":"Impacts","n":"rubber impact 2","d":"(Wheels from the wheelchair, segway, bike, shopping cart, lawnmower, minecart, trailer bike, and autogyro)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Rubber_impact_2.mp3","v":1},{"id":196,"g":"Impacts","n":"rubber impact 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Rubber_impact_3.mp3","v":1},{"id":197,"g":"Impacts","n":"rubber impact 4","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Rubber_impact_4.mp3","v":1},{"id":198,"g":"Impacts","n":"glass impact 1","d":"(Glass Panel)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Glass_impact_1.mp3","v":1},{"id":199,"g":"Impacts","n":"glass impact 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Glass_impact_2.mp3","v":1},{"id":200,"g":"Impacts","n":"heavy impact 1","d":"(Meteor)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_impact_1.mp3","v":1},{"id":201,"g":"Impacts","n":"heavy impact 2","d":"(Wrecking Ball)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_impact_2.mp3","v":1},{"id":306,"g":"Impacts","n":"wood impact 6","d":"(Irresponsible Mom's basket)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_impact_6.mp3","v":1},{"id":322,"g":"Impacts","n":"metal impact 18","d":"(Propellers on the autogyro)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_18.mp3","v":1},{"id":323,"g":"Impacts","n":"metal impact 19","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_19.mp3","v":1},{"id":324,"g":"Impacts","n":"metal impact 20","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_impact_20.mp3","v":1},{"id":256,"g":"Miscellaneous","n":"cannon fire","d":"(Generic noise used for cannon firing)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Cannon_fire.mp3","v":1},{"id":257,"g":"Miscellaneous","n":"arrow fire 1","d":"(Related to arrow guns)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_fire_1.mp3","v":1},{"id":258,"g":"Miscellaneous","n":"arrow fire 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_fire_2.mp3","v":1},{"id":259,"g":"Miscellaneous","n":"arrow hit 1","d":"(Arrow hitting a character or food item)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_hit_1.mp3","v":1},{"id":260,"g":"Miscellaneous","n":"arrow hit 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_hit_2.mp3","v":1},{"id":261,"g":"Miscellaneous","n":"arrow hit 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_hit_3.mp3","v":1},{"id":262,"g":"Miscellaneous","n":"arrow hit 4","d":"(Arrow hitting an object that can't be stabbed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_hit_4.mp3","v":1},{"id":263,"g":"Miscellaneous","n":"arrow hit 5","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Arrow_hit_5.mp3","v":1},{"id":266,"g":"Miscellaneous","n":"button hit 1","d":"(Generic noises used for button clicking on the main menu) (Clicking on a specific option)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Button_hit_1.mp3","v":1},{"id":267,"g":"Miscellaneous","n":"button hit 2","d":"(Clicking on a level or replay in the user level browser , and when an error message pops up if a level or replay can not be loaded)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Button_hit_2.mp3","v":1},{"id":268,"g":"Miscellaneous","n":"explosion","d":"(Generic noise used for landmines , homing mines, jets and Wheelchair Guy's fuel tank when they explode)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Explosion.mp3","v":1},{"id":269,"g":"Miscellaneous","n":"footsteps 1","d":"(elf footsteps)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Footsteps_1.mp3","v":1},{"id":270,"g":"Miscellaneous","n":"footsteps 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Footsteps_2.mp3","v":1},{"id":271,"g":"Miscellaneous","n":"footsteps 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Footsteps_3.mp3","v":1},{"id":272,"g":"Miscellaneous","n":"footsteps 4","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Footsteps_4.mp3","v":1},{"id":273,"g":"Miscellaneous","n":"harpoon fire","d":"(Harpoon Gun firing)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Harpoon_fire.mp3","v":1},{"id":275,"g":"Miscellaneous","n":"jet 1","d":"(Noises for jets) (Small jet)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Jet_1.mp3","v":1},{"id":276,"g":"Miscellaneous","n":"jet 2","d":"(Medium jet)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Jet_2.mp3","v":1},{"id":277,"g":"Miscellaneous","n":"jet 3","d":"(Large jet)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Jet_3.mp3","v":1},{"id":278,"g":"Miscellaneous","n":"long drum","d":"(Opening sound-effect on the character select menu)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Long_drum.mp3","v":1},{"id":280,"g":"Miscellaneous","n":"pogo 1","d":"(Pogostick Man's pogo related) (Impeller shaft from the pogostick pushing)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Pogo_1.mp3","v":1},{"id":281,"g":"Miscellaneous","n":"pogo 2","d":"(Impeller shaft pushing backwards)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Pogo_2.mp3","v":1},{"id":283,"g":"Miscellaneous","n":"saw 1","d":"(Lawnmower saw hitting a \"non-mowable\" object)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Saw_1.mp3","v":1},{"id":284,"g":"Miscellaneous","n":"saw 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Saw_2.mp3","v":1},{"id":285,"g":"Miscellaneous","n":"saw 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Saw_3.mp3","v":1},{"id":290,"g":"Miscellaneous","n":"switch on","d":"(Minecart attaching to a rail)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Switch_on.mp3","v":1},{"id":291,"g":"Miscellaneous","n":"switch off","d":"(unused)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Switch_off.mp3","v":1},{"id":292,"g":"Miscellaneous","n":"spring box","d":"(Spring platform and paddle platform)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Spring_box.mp3","v":1},{"id":241,"g":"Shatters","n":"shatter 1","d":"(All of these are related to glass shatters (glass panels, the van's window, etc.)) (Small glass panel breaking, medium glass shard, television screen and bottle broken)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_1.mp3","v":1},{"id":242,"g":"Shatters","n":"shatter 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_2.mp3","v":1},{"id":243,"g":"Shatters","n":"shatter 3","d":"(Medium glass panel breaking and large glass shard breaking)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_3.mp3","v":1},{"id":244,"g":"Shatters","n":"shatter 4","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_4.mp3","v":1},{"id":245,"g":"Shatters","n":"shatter 5","d":"(Television breaking)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_5.mp3","v":1},{"id":246,"g":"Shatters","n":"shatter 6","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_6.mp3","v":1},{"id":247,"g":"Shatters","n":"shatter 7","d":"(Large glass panel breaking)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/shatter_7.mp3","v":1},{"id":248,"g":"Shatters","n":"shatter 8","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Shatter_8.mp3","v":1},{"id":147,"g":"Smashes","n":"metal smash 1","d":"(Bike and trailer bike)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_smash_1.mp3","v":1},{"id":148,"g":"Smashes","n":"debris smash 1","d":"(Boombox slightly broken)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_1.mp3","v":1},{"id":149,"g":"Smashes","n":"debris smash 2","d":"(Boombox broken in half)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_2.mp3","v":1},{"id":150,"g":"Smashes","n":"debris smash 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_3.mp3","v":1},{"id":151,"g":"Smashes","n":"debris smash 4","d":"(Wheelchair Guy's jet and Effective Shopper's basket)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_4.mp3","v":1},{"id":152,"g":"Smashes","n":"metal smash 2","d":"(Wheelchair)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_smash_2.mp3","v":1},{"id":153,"g":"Smashes","n":"metal smash 3","d":"(Snow runners on Santa's sleigh)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_smash_3.mp3","v":1},{"id":154,"g":"Smashes","n":"wet smash 1","d":"(Part of a toilet)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wet_smash_1.mp3","v":1},{"id":155,"g":"Smashes","n":"wet smash 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wet_smash_2.mp3","v":1},{"id":156,"g":"Smashes","n":"wet smash 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wet_smash_3.mp3","v":1},{"id":157,"g":"Smashes","n":"debris smash 5","d":"(Trash can crushed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_5.mp3","v":1},{"id":158,"g":"Smashes","n":"debris smash 6","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_6.mp3","v":1},{"id":159,"g":"Smashes","n":"wood smash 1","d":"(Table)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_smash_1.mp3","v":1},{"id":160,"g":"Smashes","n":"metal smash 4","d":"(Paddle Platform)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Metal_smash_4.mp3","v":1},{"id":161,"g":"Smashes","n":"debris smash 7","d":"(Pogostick destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Debris_smash_7.mp3","v":1},{"id":162,"g":"Smashes","n":"wood smash 2","d":"(Log)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_smash_2.mp3","v":1},{"id":163,"g":"Smashes","n":"heavy smash 1","d":"(Motorized shopping cart, moped, lawnmower seat, and minecart destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_smash_1.mp3","v":1},{"id":164,"g":"Smashes","n":"heavy smash 2","d":"(Lawnmower's engine and autogyro destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_smash_2.mp3","v":1},{"id":165,"g":"Smashes","n":"heavy smash 3","d":"(Lawnmower broken in half)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_smash_3.mp3","v":1},{"id":166,"g":"Smashes","n":"heavy smash 4","d":"(Santa's sleigh destroyed)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_smash_4.mp3","v":1},{"id":167,"g":"Smashes","n":"heavy smash 5","d":"(Van)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_smash_5.mp3","v":1},{"id":307,"g":"Smashes","n":"wood smash 3","d":"(Irresponsible Mom's basket)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_smash_3.mp3","v":1},{"id":325,"g":"Smashes","n":"heavy smash 6","d":"(Propellers on the autogyro)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Heavy_smash_6.mp3","v":1},{"id":232,"g":"Snaps","n":"wood snap 1","d":"(Related to wood snapping) (Arrow breaking)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_snap_1.mp3","v":1},{"id":233,"g":"Snaps","n":"wood snap 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_snap_2.mp3","v":1},{"id":234,"g":"Snaps","n":"wood snap 3","d":"(Table top surface and chair breaking)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_snap_3.mp3","v":1},{"id":235,"g":"Snaps","n":"wood snap 4","d":"(The part on Santa's sleigh that holds the bell strap breaking, Autogyro's legs/wheels breaking off.)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Wood_snap_4.mp3","v":1},{"id":236,"g":"Snaps","n":"chain snap 1","d":"(Related to a chain snapping)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Chain_snap_1.mp3","v":1},{"id":237,"g":"Snaps","n":"chain snap 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Chain_snap_2.mp3","v":1},{"id":238,"g":"Snaps","n":"chain snap 3","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Chain_snap_3.mp3","v":1},{"id":239,"g":"Snaps","n":"strap snap 1","d":"(Santa's strap and Irresponsible Mom's trailer bike detached)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Strap_snap_1.mp3","v":1},{"id":240,"g":"Snaps","n":"strap snap 2","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Strap_snap_2.mp3","v":1},{"id":249,"g":"Thuds","n":"thud 1","d":"(Shapes colliding with a fixed object) (Shapes with a density of 0.199-0.971)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Thud_1.mp3","v":1},{"id":250,"g":"Thuds","n":"thud 2","d":"(Shapes with a very low density)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Thud_2.mp3","v":1},{"id":251,"g":"Thuds","n":"thud 3","d":"(Shapes with a low density)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Thud_3.mp3","v":1},{"id":252,"g":"Thuds","n":"thud 4","d":"(Shapes with a medium or higher density)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Thud_4.mp3","v":1},{"id":253,"g":"Thuds","n":"thud 5","d":"(Character colliding with an object)","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Thud_5.mp3","v":1},{"id":254,"g":"Thuds","n":"thud 6","d":"","u":"https://happywheels.fandom.com/wiki/Special:FilePath/Thud_6.mp3","v":1}];
+const $=id=>document.getElementById(id),num=id=>+$(id).value,chk=id=>$(id).checked;
+const SBY={},SNM={};SOUNDS.forEach(s=>{SBY[s.id]=s;SNM[s.n]=s.id});
+const sname=id=>SBY[id]?SBY[id].n:'sound '+id;
+const PAL=['thud 4','long drum','pogo 1','ping','select 1','beep on'].map(n=>SNM[n]);
+const DRUMDEF={kick:SNM['thud 1'],snare:SNM['wood snap 1'],hat:SNM['select 1'],tom:SNM['long drum'],cym:SNM['shatter 1'],other:SNM['switch on']};
+const DRUMNAME={kick:'Kick',snare:'Snare',hat:'Hi-hat',tom:'Toms',cym:'Cymbals',other:'Other percussion'};
+let song=null,cur=null,last=null,timer=null,wasFull=true,evRes=null;
+const MS={mode:'one',one:SNM['ping'],nb:3,how:'count',bands:PAL.slice(1,5),tracks:{},drums:Object.assign({},DRUMDEF),notes:{}};
+const enabled={};
+
+/* ---------- audio (preview + picker) ---------- */
+const audioCache={};let active=0;
+function playSound(id,vol){const x=SBY[id];if(!x||!x.u)return;let a=audioCache[id];if(!a){a=audioCache[id]=new Audio(x.u);a.preload='auto'}
+  if(active>24)return;const b=a.cloneNode();b.volume=vol===undefined?+$('pvol').value:vol;active++;b.onended=b.onerror=()=>{active--};b.play().catch(()=>{active--})}
+
+/* ---------- sound picker ---------- */
+let pickCb=null,pickId=null;
+function openPicker(id,cb){pickCb=cb;pickId=id;$('mq').value='';renderPicker();$('modal').style.display='flex';$('mq').focus()}
+function renderPicker(){const q=$('mq').value.toLowerCase(),L=$('mlst');L.innerHTML='';let g='';
+  SOUNDS.slice().sort((a,b)=>a.g<b.g?-1:a.g>b.g?1:a.id-b.id).forEach(s=>{
+    if(q&&!(s.n+' '+s.g+' '+s.id).toLowerCase().includes(q))return;
+    if(s.g!==g){g=s.g;const h=document.createElement('div');h.className='grp';h.textContent=g;L.appendChild(h)}
+    const d=document.createElement('div');if(s.id===pickId)d.className='on';
+    d.innerHTML=`<span>${s.n}</span><small>ID ${s.id}${s.u?' ♪':''}</small>`;
+    d.onclick=()=>{playSound(s.id,0.7);pickId=s.id;pickCb&&pickCb(s.id);$('modal').style.display='none'};L.appendChild(d)})}
+$('mq').addEventListener('input',renderPicker);$('mclose').onclick=()=>$('modal').style.display='none';
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').style.display='none'});
+function sndBtn(get,set){const b=document.createElement('button');b.className='s';const upd=()=>{b.textContent='♪ '+sname(get())};upd();
+  b.onclick=()=>openPicker(get(),id=>{set(id);upd();deb()});b.title='Click to choose a sound (it plays when picked)';return b}
+function row(label,sub,btn){const d=document.createElement('div');d.className='mrow';const s=document.createElement('span');s.innerHTML=label+(sub?` <small>${sub}</small>`:'');d.appendChild(s);d.appendChild(btn);
+  const p=document.createElement('button');p.className='s';p.textContent='▶';p.style.padding='3px 7px';p.onclick=()=>playSound(btn._id?btn._id():0,0.7);return d}
+
+/* ---------- song loading ---------- */
+function activeParts(){return song?song.parts.filter(p=>enabled[p.id]!==false):[]}
+async function loadFile(f){
+  if(!f)return;
+  try{
+    const s=HWMusic.parseMidi(await f.arrayBuffer());
+    if(!s.parts.length)throw new Error('The file has no notes');
+    song=s;song.name=f.name;s.parts.forEach(p=>{enabled[p.id]=true});
+    s.parts.filter(p=>!p.drum).forEach((p,i)=>{MS.tracks[p.id]=PAL[(i+1)%PAL.length]});
+    $('tStart').value=0;$('tEnd').value=0;
+    $('drop').classList.add('on');$('drop').innerHTML=f.name.replace(/</g,'&lt;')+'<br><small>drop another to replace</small>';
+    renderParts();renderMap();$('play').disabled=false;run();
+  }catch(e){$('stats').innerHTML='<span class="warn">Could not read that file: '+String(e.message||e).replace(/</g,'&lt;')+'</span>'}
+}
+function renderParts(){const L=$('parts');L.innerHTML='';
+  song.parts.forEach(p=>{const d=document.createElement('div');d.className='prow';
+    const c=document.createElement('input');c.type='checkbox';c.checked=enabled[p.id]!==false;c.onchange=()=>{enabled[p.id]=c.checked;renderMap();deb()};
+    const nm=document.createElement('span');nm.innerHTML=`${p.name.replace(/</g,'&lt;')} <small>${p.drum?'percussion':(p.inst||'')}</small>`;
+    const n=document.createElement('small');n.textContent=p.notes.length+' notes';d.append(c,nm,n);L.appendChild(d)});
+  $('songInfo').innerHTML=`<small>${song.parts.length} parts · ${song.parts.reduce((a,p)=>a+p.notes.length,0)} notes · ${song.duration.toFixed(1)} s · ${song.tempoChanges} tempo change(s)</small>`}
+
+/* ---------- mapping UI ---------- */
+function renderMap(){
+  const U=$('mapUI');U.innerHTML='';const m=MS.mode=$('mapMode').value,ps=activeParts();
+  const add=(label,sub,get,set)=>{const b=sndBtn(get,set);const r=document.createElement('div');r.className='mrow';const s=document.createElement('span');s.innerHTML=label+(sub?` <small>${sub}</small>`:'');r.append(s,b);U.appendChild(r)};
+  if(m==='one'){add('Every note','',()=>MS.one,v=>MS.one=v);return}
+  if(!song){U.innerHTML='<small>Load a song to set this up.</small>';return}
+  if(m==='pitch'){
+    const o=document.createElement('div');o.className='row';
+    o.innerHTML=`<div><label>Number of bands</label><select id="nb">${[2,3,4,5,6,7,8].map(n=>`<option${n===MS.nb?' selected':''}>${n}</option>`).join('')}</select></div><div><label>Split by</label><select id="how"><option value="count"${MS.how==='count'?' selected':''}>Same number of notes</option><option value="range"${MS.how==='range'?' selected':''}>Same pitch range</option></select></div>`;
+    U.appendChild(o);o.querySelector('#nb').onchange=e=>{MS.nb=+e.target.value;renderMap();deb()};o.querySelector('#how').onchange=e=>{MS.how=e.target.value;renderMap();deb()};
+    const e=HWMusic.bandEdges(ps,MS.nb,MS.how),lo=[];let a=0;
+    while(MS.bands.length<MS.nb)MS.bands.push(PAL[MS.bands.length%PAL.length]);
+    for(let i=0;i<MS.nb;i++){const from=i?HWMusic.noteName(e[i-1]):'lowest',to=i<MS.nb-1?'below '+HWMusic.noteName(e[i]):'highest';
+      const idx=i;add(`Band ${i+1}`,`${from} → ${to}`,()=>MS.bands[idx],v=>MS.bands[idx]=v)}
+    return}
+  if(m==='track'){
+    ps.filter(p=>!p.drum).forEach(p=>add(p.name.replace(/</g,'&lt;'),(p.inst||'')+' · '+p.notes.length+' notes',()=>MS.tracks[p.id]===undefined?MS.one:MS.tracks[p.id],v=>MS.tracks[p.id]=v));
+    if(ps.some(p=>p.drum)){const h=document.createElement('small');h.textContent='Percussion:';h.style.display='block';h.style.marginTop='8px';U.appendChild(h);
+      Object.keys(DRUMNAME).forEach(k=>add(DRUMNAME[k],'',()=>MS.drums[k],v=>MS.drums[k]=v))}
+    return}
+  if(m==='note'){
+    const cnt={};ps.forEach(p=>p.notes.forEach(n=>{const k=HWMusic.noteKey(p,n.n);cnt[k]=(cnt[k]||0)+1}));
+    const keys=Object.keys(cnt).sort((a,b)=>(a[0]==='d')-(b[0]==='d')||parseInt(a.replace('d',''))-parseInt(b.replace('d','')));
+    const bt=document.createElement('div');bt.className='row';
+    bt.innerHTML='<div><button class="s sm" id="fillBands" style="width:100%">Fill from pitch bands</button></div><div><button class="s sm" id="fillOne" style="width:100%">Set all to one sound</button></div>';U.appendChild(bt);
+    bt.querySelector('#fillBands').onclick=()=>{const e=HWMusic.bandEdges(ps,MS.nb,MS.how);keys.forEach(k=>{const n=parseInt(k.replace('d',''));MS.notes[k]=k[0]==='d'?(MS.drums[HWMusic.DRUM_GROUP[n]||'other']):HWMusic.soundFor({drum:false},n,{mode:'pitch',edges:e,bands:MS.bands.slice(0,MS.nb),one:MS.one})});renderMap();deb()};
+    bt.querySelector('#fillOne').onclick=()=>{keys.forEach(k=>MS.notes[k]=MS.one);renderMap();deb()};
+    keys.forEach(k=>{const n=parseInt(k.replace('d',''));add(k[0]==='d'?'Drum '+n:HWMusic.noteName(n),cnt[k]+' notes',()=>MS.notes[k]===undefined?MS.one:MS.notes[k],v=>MS.notes[k]=v)})}
+}
+
+/* ---------- build ---------- */
+function mapObj(){const ps=activeParts();return {mode:MS.mode,one:MS.one,bands:MS.bands.slice(0,MS.nb),edges:HWMusic.bandEdges(ps,MS.nb,MS.how),tracks:MS.tracks,drums:MS.drums,notes:MS.notes}}
+function params(){
+  const full=chk('sFloor');
+  const p={cx:num('cx'),cy:num('cy'),labels:chk('labels'),vehicle:num('veh'),seg:num('seg'),direct:chk('direct'),velVol:chk('velVol'),
+    bTimer:num('bt'),bPlayer:num('bp'),bClick:num('bk'),rTimer:num('rt'),trigAct:num('tra'),tSound:num('tsn'),volume:num('vol'),sOff:num('sOff'),
+    scene:{floor:full,walls:chk('sWalls'),stripe:chk('sStripe'),text:chk('sTxt')?($('sTxtVal').value||({auto:'Music starts on its own',click:'Click the red button to play the music',trigger:'Music: start it with your own trigger'})[$('sType').value]):''},
+    start:{type:$('sType').value},end:{type:$('eType').value,gap:num('gap')}};
+  if(cur){p.idBase=cur.idBase;p.trigBase=cur.trigs;if(cur.x!=null&&cur.y!=null)p.spawn=[cur.x,cur.y]}
+  return p}
+function run(){
+  labels();
+  if(!song){$('stats').textContent='Load a MIDI file to start.';return}
+  const P={enabled,start:num('tStart'),end:num('tEnd'),speed:num('speed'),minVel:num('minVel'),res:num('res'),poly:num('poly'),maxNotes:num('maxNotes')};
+  const ev=HWMusic.makeEvents(song.parts,mapObj(),P);evRes=ev;
+  if(!ev.events.length){last=null;$('copy').disabled=$('dl').disabled=true;$('stats').innerHTML='<span class="warn">No notes to play with these settings (check the parts, start/end and sounds).</span>';draw();drawMap();return}
+  const p=params(),ms=Math.floor(+$('maxShapes').value)||0,fit=HWMusic.fitTriggers(ev.events,p,ms);
+  ev.all=ev.events;ev.events=fit.events;ev.cutN=fit.cut;ev.fixed=fit.fixed;ev.duration=fit.events.reduce((m,e)=>Math.max(m,e.t),0);
+  if(!ev.events.length){last=null;$('copy').disabled=$('dl').disabled=true;$('stats').innerHTML=`<span class="warn">Max shapes (${ms}) is too low: the start/loop triggers plus a single note already need ${HWMusic.countTriggers([ev.all[0]],p)}.</span>`;draw();drawMap();return}
+  const r=HWMusic.build(ev.events,p);
+  r.out=cur?HWMusic.mergeLevel($('lvl').value,r.pieces):r.xml;last={r,p,ev};
+  $('copy').disabled=$('dl').disabled=false;
+  const kb=Math.round(r.out.length/1024);
+  $('stats').innerHTML=`<b>${ev.events.length}</b> sounds in <b>${r.slots}</b> time slots · <b>${r.triggers}</b> triggers${r.segments>1?` (${r.segments} blocks)`:''} · song <b>${r.duration.toFixed(1)} s</b>${r.loop?' (with loop pause)':''} · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
+   (r.art?` · art ${(cur?cur.art:0)+r.art}`:'')+
+   (ev.dropped?`<br>${ev.dropped} notes merged or dropped (same sound in the same instant, or limits).`:'')+(ev.cutN?`<br><span class="warn">Cut by Max shapes: ${ev.cutN} of ${ev.all.length} sounds removed from the end. Only the first ${ev.events.length} are kept (${ev.duration.toFixed(1)} s of ${ev.all[ev.all.length-1].t.toFixed(1)} s). ${HWMusic.countTriggers([],p)} structural triggers stay.</span>`:'')+
+   (r.triggers>4000?'<br><span class="warn">Very many triggers: the game may lag or freeze. Shorten the song, raise the time resolution or use fewer parts.</span>':r.triggers>1500?'<br><span class="warn">Many triggers: it may be heavy for the game. Lower the detail if it lags.</span>':'')+
+   (p.direct?'<br><span class="warn">"Sound triggers carry their own delay" is unverified: if the notes all play at once, turn it off.</span>':'')+
+   (!cur&&!p.scene.floor?'<br><span class="warn">New level without a platform: the player will fall. Tick Platform or paste your level.</span>':'');
+  draw();drawMap();
+}
+function labels(){
+  [['speed','vSp'],['minVel','vMv'],['res','vRes'],['seg','vSeg']].forEach(([a,b])=>$(b).textContent=$(a).value);
+  $('gapBox').style.display=$('eType').value==='loop'?'block':'none';
+}
+const deb=()=>{clearTimeout(timer);timer=setTimeout(()=>{if(!playing)run();else run()},200)};
+
+/* ---------- piano roll + preview playback ---------- */
+let playing=false,pt=0,raf=0,pi=0,pLast=0;
+const hue=id=>Math.round((id*47)%360);
+function draw(){
+  const cv=$('roll'),g=cv.getContext('2d'),W=cv.width,H=cv.height;g.fillStyle='#000';g.fillRect(0,0,W,H);
+  if(!evRes||!evRes.events.length){g.fillStyle='#7a0c0c';g.font='20px VT323,monospace';g.fillText('piano roll',10,24);return}
+  const E=evRes.events,T=Math.max(0.5,evRes.duration+(last&&last.r.loop?num('gap'):0.2));let lo=127,hi=0;E.forEach(e=>{lo=Math.min(lo,e.n);hi=Math.max(hi,e.n)});if(hi===lo)hi=lo+1;
+  g.strokeStyle='#2a0000';g.lineWidth=1;for(let s=0;s<T;s+=Math.max(1,Math.round(T/12))){const x=Math.round(s/T*W)+.5;g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
+  (evRes.all||E).forEach(e=>{lo=Math.min(lo,e.n);hi=Math.max(hi,e.n)});if(hi===lo)hi=lo+1;
+  const Tall=Math.max(T,((evRes.all||E).slice(-1)[0]||{t:0}).t+0.2);
+  (evRes.all||E).forEach((e,i)=>{const kept=i<E.length,x=e.t/Tall*W,y=H-8-(e.n-lo)/(hi-lo)*(H-20);g.fillStyle=kept?`hsl(${hue(e.id)},85%,58%)`:'#3a3a3a';g.fillRect(x,y-2,Math.max(2,W/Tall*0.06),4)});
+  /*g.fillRect(x,y-2,Math.max(2,W/T*0.06),4)*/;
+  const x=pt/Tall*W;g.fillStyle='#ffd23f';g.fillRect(x,0,2,H);$('ptime').textContent=pt.toFixed(1)+' / '+T.toFixed(1)+' s';
+}
+function stopPlay(){playing=false;cancelAnimationFrame(raf);$('play').textContent='▶ Preview'}
+function startPlay(){
+  if(!evRes||!evRes.events.length)return;playing=true;pt=0;pi=0;pLast=performance.now();$('play').textContent='❚❚ Stop';
+  const E=evRes.events,loop=$('eType').value==='loop',T=evRes.duration+(loop?num('gap'):0.2);
+  const tick=now=>{if(!playing)return;pt+=(now-pLast)/1000;pLast=now;
+    while(pi<E.length&&E[pi].t<=pt){playSound(E[pi].id);pi++}
+    if(pt>=T){if(loop){pt=0;pi=0}else{stopPlay();draw();return}}
+    draw();raf=requestAnimationFrame(tick)};raf=requestAnimationFrame(tick)}
+$('play').onclick=()=>playing?(stopPlay(),draw()):startPlay();
+
+/* ---------- layout map ---------- */
+function drawMap(){
+  const cv=$('map'),g=cv.getContext('2d');if(!last)return;const L=last.r.lay;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;L.forEach(o=>{x0=Math.min(x0,o.x);y0=Math.min(y0,o.y);x1=Math.max(x1,o.x+o.w);y1=Math.max(y1,o.y+o.h)});
+  const pad=20,s=Math.min((cv.width-pad*2)/(x1-x0),3);cv.height=Math.max(120,Math.round((y1-y0)*s+pad*2));
+  const col={start:'#2f9e4f',floor:'#7a0c0c',grid:'#4a63d8aa'};
+  g.fillStyle='#000';g.fillRect(0,0,cv.width,cv.height);g.font='16px VT323,monospace';
+  L.forEach(o=>{g.fillStyle=col[o.k]||'#888';const X=pad+(o.x-x0)*s,Y=pad+(o.y-y0)*s;g.fillRect(X,Y,Math.max(3,o.w*s),Math.max(3,o.h*s));g.fillStyle='#ffe1b8';g.fillText(o.l,X+(o.k==='start'?o.w*s+6:4),Y+(o.k==='grid'?14:Math.max(12,o.h*s/2+4)))});
+  $('mapLeg').innerHTML='<span>● <b>green</b> start trigger</span><span>● <b>blue</b> blocks of note triggers (do not move)</span><span>● <b>dark red</b> platform</span>';
+}
+
+/* ---------- wiring ---------- */
+['tStart','tEnd','speed','minVel','mapMode','velVol','sType','eType','gap','sFloor','sWalls','sStripe','sTxt','sTxtVal','labels','veh','cx','cy','res','poly','maxNotes','maxShapes','seg','direct','bt','bp','bk','rt','tra','tsn','vol','sOff'].forEach(i=>$(i).addEventListener('input',()=>{if(i==='mapMode')renderMap();deb()}));
+$('mapMode').addEventListener('change',renderMap);
+$('presetFull').onclick=()=>{['sFloor','sWalls','sStripe','sTxt'].forEach(i=>$(i).checked=true);deb()};
+$('presetLoose').onclick=()=>{['sFloor','sWalls','sStripe','sTxt'].forEach(i=>$(i).checked=false);deb()};
+$('drop').onclick=()=>$('file').click();$('file').onchange=e=>loadFile(e.target.files[0]);
+document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();const f=[...e.dataTransfer.files].find(f=>/\.(mid|midi|kar|rmi)$/i.test(f.name)||/midi/.test(f.type))||e.dataTransfer.files[0];loadFile(f)});
+$('copy').onclick=async()=>{if(!last)return;const x=last.r.out;try{await navigator.clipboard.writeText(x)}catch(_){const t=document.createElement('textarea');t.value=x;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
+  $('copy').textContent='Copied!';setTimeout(()=>$('copy').textContent='Copy level data',1500)};
+$('dl').onclick=()=>{if(!last)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([last.r.out],{type:'text/plain'}));a.download='music_levelxml.txt';a.click()};
+$('lvl').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{
+  const v=$('lvl').value.trim();
+  if(!v){cur=null;$('lvS').textContent='';return run()}
+  const i=HWMusic.inspectLevel(v);
+  if(!i.valid){cur=null;$('lvS').textContent='not valid';return run()}
+  cur=i;$('lvS').textContent=i.art+' art · '+i.trigs+' triggers';
+  if(i.x!=null&&i.y!=null){$('cx').value=Math.round(i.x+300);$('cy').value=Math.round(i.y+300)}
+  if(wasFull){['sFloor','sWalls','sStripe','sTxt'].forEach(k=>$(k).checked=false);wasFull=false}
+  run()},300)});
+renderMap();labels();draw();
+</script></body></html>

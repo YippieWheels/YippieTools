@@ -55,7 +55,7 @@ small{color:var(--mu);font-size:15px;line-height:1.25}
 </style></head><body>
 <aside>
 <h1>Image → Happy Wheels</h1>
-<small>Turns pictures into art shapes. Default method: one art shape per color.</small>
+<small>Turns pictures into art shapes. Methods: one art shape per color, classic, or pixel art.</small>
 <div class="ai">⚠ This program was made by an AI for experimental purposes. Expect bugs of all kinds.</div>
 <div id="drop">Drop one or more images<br>or click to choose</div>
 <input id="file" type="file" accept="image/*" multiple hidden>
@@ -63,23 +63,33 @@ small{color:var(--mu);font-size:15px;line-height:1.25}
 <button id="clear" class="s" style="margin-top:6px;padding:6px;display:none">Remove all</button>
 <label>Current level (optional) <b id="lvS"></b></label>
 <textarea id="lvl" placeholder="Paste your level data here and the images are added as groups"></textarea>
-<label>Method</label>
-<select id="method"><option value="mono">One art shape per color (few shapes, many points)</option><option value="classic">Classic (many small shapes, few points each)</option></select>
+<div id="methodBox" style="margin:16px 0;padding:12px;border:2px solid var(--ac);background:#1a0000">
+<div style="font:400 24px/1.2 var(--fh);color:var(--yl);letter-spacing:.06em">METHOD</div>
+<div style="font-size:19px;line-height:1.2;color:var(--hi);margin:6px 0 10px">It can be pixel art, rounded shapes, or many small shapes: pick how the image gets built.</div>
+<select id="method" style="font-size:21px;padding:8px 6px;border:2px solid var(--ac)"><option value="mono">Rounded shapes (one art shape per color)</option><option value="classic">Classic (many small shapes, few points each)</option><option value="pixel">Pixel art (real pixels, one shape per color)</option></select></div>
 <div id="monoOpts"><label>Quality preset</label>
-<select id="preset"><option value="">Custom</option><option value="low">Low (~72p, 12 colors, 4k pts)</option><option value="med" selected>Medium (~108p, 16 colors, 8k pts)</option><option value="high">High (~144p, 24 colors, 20k pts)</option><option value="ultra">Ultra (~216p, 40 colors, 50k pts)</option><option value="max">Max (~288p, 64 colors, 100k pts)</option></select></div>
+<select id="preset"><option value="">Custom</option><option value="low">Low (12 colors, 4k pts)</option><option value="med" selected>Medium (16 colors, 8k pts)</option><option value="high">High (24 colors, 20k pts)</option><option value="ultra">Ultra (40 colors, 50k pts)</option><option value="max">Max (64 colors, 100k pts)</option></select></div>
 <label>Colors <b id="vC"></b></label><input id="colors" type="range" min="2" max="64" value="16">
 <div id="monoOpts2"><label>Point budget per image <b id="vP"></b></label><input id="budget" type="range" min="500" max="100000" step="500" value="8000">
 <small>More points = more detail, but may slow the game. Art used = colors per image.</small>
 <label>Edge smoothing <b id="vS"></b></label><input id="smooth" type="range" min="0" max="4" step="1" value="2"></div>
+<div id="pixOpts" style="display:none"><label>Size preset (pixels on the longest side)</label>
+<select id="ppreset"><option value="">Custom</option><option value="16">16 px</option><option value="24">24 px</option><option value="32">32 px</option><option value="48">48 px</option><option value="64" selected>64 px</option><option value="96">96 px</option><option value="128">128 px</option><option value="192">192 px</option><option value="256">256 px</option></select>
+<label>Pixels on the longest side <b id="vPR"></b></label><input id="pres" type="range" min="8" max="320" step="1" value="64">
+<small>The other side follows the image proportions. This is the real number of pixels the image will have; the size in game is set below.</small>
+<label>Resampling</label><select id="pSamp"><option value="avg">Average (smooth downscale)</option><option value="nearest">Nearest (sharp pixels)</option></select>
+<div class="chk" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input id="pSplit" type="checkbox"><span style="font-size:16px">More than one shape per color</span></div>
+<div id="pSplitOpts" style="display:none"><label>Max shapes per color <b id="vPS"></b></label><input id="pShapes" type="range" min="2" max="100" value="10"><small>Each separate region of a color becomes its own shape, largest first. Regions beyond the limit are merged into one extra shape.</small></div>
+<small>Colors: use the Colors slider above. Pixel art draws the biggest color first and the others on top, so touching pixels of one color share a single outline.</small></div>
 <div id="clsOpts" style="display:none"><label>Art shapes per image (approx.) <b id="vT"></b></label><input id="target" type="range" min="20" max="1500" value="250"></div>
-<label>Noise smoothing <b id="vB"></b></label><input id="blur" type="range" min="0" max="8" step="1" value="3">
-<label>Analysis resolution (longest side) <b id="vR"></b></label><input id="res" type="range" min="64" max="640" step="8" value="192">
+<div id="blurOpts"><label>Noise smoothing <b id="vB"></b></label><input id="blur" type="range" min="0" max="8" step="1" value="3"></div>
+<div id="resOpts"><label>Analysis resolution (longest side) <b id="vR"></b></label><input id="res" type="range" min="64" max="640" step="8" value="192"></div>
 <label>Size of each image (max width × height)</label>
 <div class="row"><div><input id="vw" type="number" value="640"></div><div><input id="vh" type="number" value="360"></div></div>
 <small>The camera shows about 640×360.</small>
 <label>Transparent areas (PNG / WebP)</label>
 <div class="chk" style="display:flex;gap:8px;align-items:center;margin-top:6px"><input id="cut" type="checkbox" checked><span style="font-size:16px">No background: transparent areas get no art</span></div>
-<small>Only with the one-shape-per-color method. Otherwise (or unchecked) they are filled with:</small>
+<small>Only with the one-shape-per-color and pixel art methods. Otherwise (or unchecked) they are filled with:</small>
 <input id="bg" type="color" value="#ffffff" style="width:100%;height:32px">
 <div class="row"><button class="s" type="button" id="bgW" style="margin-top:6px;padding:5px">White</button><button class="s" type="button" id="bgK" style="margin-top:6px;padding:5px">Black</button><button class="s" type="button" id="bgA" style="margin-top:6px;padding:5px">Auto</button></div>
 <small>Auto picks black or white, whichever contrasts with the image.</small>
@@ -87,8 +97,8 @@ small{color:var(--mu);font-size:15px;line-height:1.25}
 <div class="row"><div><input id="gap" type="number" value="40"></div><div><input id="perRow" type="number" value="0" min="0"></div></div>
 <label>Position of the first image (x, y)</label>
 <div class="row"><div><input id="px" type="number" value="300"></div><div><input id="py" type="number" value="4800"></div></div>
-<label>Max points per shape <b id="vM"></b></label><input id="maxPts" type="range" min="20" max="100" value="100">
-<small>100 is the game limit without mods (classic method only).</small>
+<div id="maxOpts"><label>Max points per shape <b id="vM"></b></label><input id="maxPts" type="range" min="20" max="100" value="100">
+<small>100 is the game limit without mods (classic method only).</small></div>
 <button id="copy">Copy level data</button>
 <button id="dl" class="s">Download .txt</button>
 </aside>
@@ -602,6 +612,53 @@ const HWCore = (function () {
     return { xs, ok, points: monoPoints(shapes), fw, fh, shapes, unit };
   }
 
+  // ---------- pixel art: real pixels, one shape per color (or several) ----------
+  const dropCollinear = (P) => { let Q = P, ch = true; while (ch && Q.length > 3) { ch = false; const R2 = []; for (let i = 0; i < Q.length; i++) { const a = Q[(i + Q.length - 1) % Q.length], b = Q[i], c = Q[(i + 1) % Q.length]; if ((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) === 0) ch = true; else R2.push(b); } Q = R2; } return Q; };
+  function pixComps(mask, w, h) { // 4-connected regions of a mask, as lists of pixel indices
+    const seen = new Uint8Array(w * h), out = [];
+    for (let s0 = 0; s0 < w * h; s0++) {
+      if (!mask[s0] || seen[s0]) continue; const px = [s0], st = [s0]; seen[s0] = 1;
+      while (st.length) { const p = st.pop(), x = p % w, y = (p / w) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue; const q = ny * w + nx; if (mask[q] && !seen[q]) { seen[q] = 1; px.push(q); st.push(q); } } }
+      out.push(px);
+    }
+    return out;
+  }
+  /* rgba is the image already reduced to its real w x h pixels. o: {colors,cutAlpha,split,perColor,viewW,viewH,cellW,cellH,x,y,idBase} */
+  function convertPixel(rgba, w, h, o) {
+    let src = rgba, voidN = 0;
+    if (o.cutAlpha) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let p = 0; p < w * h; p++) if (rgba[p * 4 + 3] >= 128) { r += rgba[p * 4]; g += rgba[p * 4 + 1]; b += rgba[p * 4 + 2]; n++; } else voidN++;
+      if (voidN && n) { src = new Uint8ClampedArray(rgba); r = r / n | 0; g = g / n | 0; b = b / n | 0; for (let p = 0; p < w * h; p++) { if (src[p * 4 + 3] < 128) { src[p * 4] = r; src[p * 4 + 1] = g; src[p * 4 + 2] = b; } src[p * 4 + 3] = 255; } } else voidN = 0;
+    }
+    const Q = quantizeLab(src, w, h, o.colors, 0, 1), K0 = Q.pal.length, cnt = new Array(K0).fill(0);
+    for (let p = 0; p < w * h; p++) cnt[Q.labels[p]]++;
+    const order = [...Array(K0).keys()].filter((i) => cnt[i] > 0).sort((a, b) => cnt[b] - cnt[a]), rank = new Array(K0).fill(-1); order.forEach((c, i) => (rank[c] = i));
+    const pal = order.map((c) => Q.pal[c]), K = pal.length, labels = new Int32Array(w * h);
+    for (let p = 0; p < w * h; p++) labels[p] = voidN && rgba[p * 4 + 3] < 128 ? K : rank[Q.labels[p]];
+    // Painter's order, biggest color first. Shape c = every pixel of color c AND of the colors painted after it:
+    // touching pixels become ONE outline (a 2x1 block is 4 points), and there are no seams or needless holes.
+    const mk = (mask) => { const loops = traceLoops(mask, w, h).map(dropCollinear).filter((L) => L.length >= 3); return loops.length ? joinLoops(loops) : null; };
+    const shapes = [], per = o.split ? Math.max(2, o.perColor | 0) : 1;
+    for (let c = 0; c < K; c++) {
+      const S = new Uint8Array(w * h); for (let p = 0; p < w * h; p++) S[p] = labels[p] >= c && labels[p] < K ? 1 : 0;
+      if (per === 1) { const pts = mk(S); if (pts) shapes.push({ c, pts }); continue; }
+      const comps = pixComps(S, w, h).filter((px) => px.some((p) => labels[p] === c)).sort((a, b) => b.length - a.length), rest = new Uint8Array(w * h); let restN = 0;
+      comps.forEach((px, i) => {
+        if (i < per - 1 || comps.length <= per) { const m = new Uint8Array(w * h); px.forEach((p) => (m[p] = 1)); const pts = mk(m); if (pts) shapes.push({ c, pts }); }
+        else { px.forEach((p) => (rest[p] = 1)); restN++; }
+      });
+      if (restN) { const pts = mk(rest); if (pts) shapes.push({ c, pts }); }
+    }
+    const unit = Math.min(o.viewW / w, o.viewH / h), base = o.idBase || 0, fw = w * unit, fh = h * unit;
+    const X = o.x + (o.cellW ? (o.cellW - fw) / 2 : 0), Y = o.y + (o.cellH ? (o.cellH - fh) / 2 : 0);
+    const S = (pts) => pts.map((p) => [p[0] * unit, p[1] * unit]);
+    const xs = shapes.map((s, i) => artXml(S(s.pts), pack(pal[s.c]), base + i, X, Y));
+    const gx = r1(X + fw / 2), gy = r1(Y + fh / 2);
+    const group = `<g x="${gx}" y="${gy}" r="0" ox="${-gx}" oy="${-gy}" s="f" f="f" o="100" im="f" fr="f">\n${xs.join('\n')}\n</g>`;
+    return { group, X, Y, polys: shapes, pal, w, h, t: 1, ok: true, count: xs.length, cut: !!voidN, points: shapes.reduce((a, s) => a + s.pts.length, 0), fw: Math.round(fw), fh: Math.round(fh), unit, mono: true, colors: K };
+  }
+
   // ---------- nivel existente ----------
   function inspect(level) {
     const ids = [...level.matchAll(/<v\b[^>]*?\bid="(-?\d+)"/g)].map((m) => +m[1]);
@@ -632,7 +689,7 @@ const HWCore = (function () {
     return `<levelXML>\n    <info v="2.01" rv="1.99.2" x="${Math.max(50, Math.round(x))}" y="${Math.round(y)}" c="1" f="f" h="f" bg="0" bgc="16777215" e="1"/>\n    <groups>\n${groups.split('\n').map((l) => '        ' + l).join('\n')}\n    </groups>\n</levelXML>\n`;
   }
 
-  return { artXml, buildPalette, labelPal, convertFramePal, convert, convertMono, fitMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
+  return { artXml, buildPalette, labelPal, convertFramePal, convert, convertMono, convertPixel, fitMono, quantizeLab, wrap, inspect, merge, quantize, build, fit, components, cleanSmall, simplifyClosed, dpOpen, pack, r1 };
 })();
 if (typeof module !== 'undefined') module.exports = HWCore;
 
@@ -640,11 +697,13 @@ if (typeof module !== 'undefined') module.exports = HWCore;
 <script>
 const $=id=>document.getElementById(id);
 let items=[],last=null,timer=null,cur=null,runId=0;
-const sliders=[['target','vT'],['colors','vC'],['blur','vB'],['res','vR'],['maxPts','vM'],['budget','vP'],['smooth','vS']];
+const sliders=[['target','vT'],['colors','vC'],['blur','vB'],['res','vR'],['maxPts','vM'],['budget','vP'],['smooth','vS'],['pres','vPR'],['pShapes','vPS']];
 const PRESETS={low:[72,12,4000,2,3],med:[108,16,8000,2,3],high:[144,24,20000,1,2],ultra:[216,40,50000,1,1],max:[288,64,100000,1,1]};
 function applyPreset(){const p=PRESETS[$('preset').value];if(!p)return;
   $('res').value=Math.round(p[0]*16/9/8)*8;$('colors').value=p[1];$('budget').value=p[2];$('smooth').value=p[3];$('blur').value=p[4]}
-const labels=()=>{sliders.forEach(([a,b])=>$(b).textContent=$(a).value);const m=$('method').value==='mono';$('monoOpts').style.display=$('monoOpts2').style.display=m?'block':'none';$('clsOpts').style.display=m?'none':'block'};
+const labels=()=>{sliders.forEach(([a,b])=>$(b).textContent=$(a).value);const m=$('method').value,mo=m==='mono',px=m==='pixel';
+  $('monoOpts').style.display=$('monoOpts2').style.display=mo?'block':'none';$('clsOpts').style.display=m==='classic'?'block':'none';$('pixOpts').style.display=px?'block':'none';
+  ['blurOpts','resOpts','maxOpts'].forEach(i=>$(i).style.display=px?'none':'block');$('pSplitOpts').style.display=$('pSplit').checked?'block':'none'};
 const num=id=>+$(id).value;
 
 function addFiles(files){
@@ -675,20 +734,25 @@ function layout(n){
   cols=Math.max(1,Math.min(cols,n));
   return{vw,vh,gap,px,py,pX,pY,cols,rows:Math.ceil(n/cols)};
 }
+function shrinkTo(src,w,h,smooth){ // reduce an image to exactly w x h pixels (halving steps = a good area average)
+  let c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);
+  if(smooth)while(c.width/2>=w&&c.height/2>=h){const n=document.createElement('canvas');n.width=Math.max(w,Math.floor(c.width/2));n.height=Math.max(h,Math.floor(c.height/2));const ng=n.getContext('2d');ng.imageSmoothingQuality='high';ng.drawImage(c,0,0,n.width,n.height);c=n}
+  const o=document.createElement('canvas');o.width=w;o.height=h;const og=o.getContext('2d',{willReadFrequently:true});og.imageSmoothingEnabled=smooth;og.imageSmoothingQuality='high';og.drawImage(c,0,0,w,h);return o}
 async function run(){
   labels();const id=++runId;
   if(!items.length){last=null;$('stats').textContent='Load one or more images to start.';return}
-  const n=items.length,Lo=layout(n),R=num('res'),t0=performance.now();
+  const mode=$('method').value,n=items.length,Lo=layout(n),R=mode==='pixel'?num('pres'):num('res'),mn=mode==='pixel'?1:8,t0=performance.now();
   let idBase=cur?cur.idBase:0;const res=[],groups=[];
   for(let i=0;i<n;i++){
     $('stats').textContent=`Processing ${i+1}/${n}…`;
     await new Promise(r=>setTimeout(r,15));if(id!==runId)return;
     const src=items[i].im,s=R/Math.max(src.width,src.height);
-    const w=Math.max(8,Math.round(src.width*s)),h=Math.max(8,Math.round(src.height*s));
+    const w=Math.max(mn,Math.round(src.width*s)),h=Math.max(mn,Math.round(src.height*s));
     const c=document.createElement('canvas');c.width=w;c.height=h;
-    const g=c.getContext('2d',{willReadFrequently:true});const cut=$('cut').checked&&$('method').value==='mono';if(!cut){g.fillStyle=$('bg').value;g.fillRect(0,0,w,h)}g.drawImage(src,0,0,w,h);
-    const mono=$('method').value==='mono',px_=g.getImageData(0,0,w,h).data;
-    const r=(mono?HWCore.convertMono:HWCore.convert)(px_,w,h,{
+    const g=c.getContext('2d',{willReadFrequently:true});const cut=$('cut').checked&&mode!=='classic';if(!cut){g.fillStyle=$('bg').value;g.fillRect(0,0,w,h)}
+    if(mode==='pixel')g.drawImage(shrinkTo(src,w,h,$('pSamp').value!=='nearest'),0,0);else g.drawImage(src,0,0,w,h);
+    const mono=mode==='mono',px_=g.getImageData(0,0,w,h).data;
+    const r=(mode==='pixel'?HWCore.convertPixel:mono?HWCore.convertMono:HWCore.convert)(px_,w,h,{split:$('pSplit').checked,perColor:num('pShapes'),
       colors:num('colors'),target:num('target'),blur:num('blur'),maxPts:num('maxPts'),pointBudget:num('budget'),smooth:num('smooth'),cutAlpha:cut,
       viewW:Lo.vw,viewH:Lo.vh,cellW:Lo.vw,cellH:Lo.vh,
       x:Lo.px+(i%Lo.cols)*Lo.pX,y:Lo.py+Math.floor(i/Lo.cols)*Lo.pY,idBase});
@@ -702,7 +766,7 @@ async function run(){
   const wTot=Lo.cols*Lo.pX-Lo.gap,hTot=Lo.rows*Lo.pY-Lo.gap;
   const bad=Lo.px+wTot>20000||Lo.py+hTot>9900;
   const kb=out.length/1048576;
-  $('stats').innerHTML=`<b>${n}</b> image${n>1?'s':''} · <b>${totalCount}</b> art shapes total (${Math.round(totalCount/n)} per image) · <b>${totalPts}</b> points · ${Lo.cols}×${Lo.rows} (cols×rows) · ${wTot}×${hTot} in game · ${kb.toFixed(2)} MB · ${((performance.now()-t0)/1000).toFixed(1)} s`+
+  $('stats').innerHTML=`<b>${n}</b> image${n>1?'s':''} · <b>${totalCount}</b> art shapes total (${Math.round(totalCount/n)} per image) · <b>${totalPts}</b> points · ${Lo.cols}×${Lo.rows} (cols×rows) · ${wTot}×${hTot} in game ${mode==='pixel'?' · '+res.slice(0,3).map(r=>r.w+'×'+r.h+' px').join(', ')+(res.length>3?'…':''):''} · ${kb.toFixed(2)} MB · ${((performance.now()-t0)/1000).toFixed(1)} s`+
     (cur?`<br>Added to the pasted level · total art approx. <b>${art}</b> / 10000`:'')+
     (art>10000?'<br><span class="warn">Over the 10000 art limit: lower colors or the number of images.</span>':'')+
     (totalPts>60000?'<br><span class="warn">Many points: the game may lag or freeze on import. Lower the point budget if it does.</span>':'')+
@@ -722,7 +786,7 @@ function draw(res,Lo){
   });
 }
 function debounce(){clearTimeout(timer);labels();timer=setTimeout(run,400)}
-['cut','bg','method','budget','smooth','target','colors','blur','res','maxPts','vw','vh','px','py','gap','perRow'].forEach(i=>$(i).addEventListener('input',debounce));
+['pres','pSamp','pSplit','pShapes','cut','bg','method','budget','smooth','target','colors','blur','res','maxPts','vw','vh','px','py','gap','perRow'].forEach(i=>$(i).addEventListener('input',debounce));
 $('drop').onclick=()=>$('file').click();
 $('file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 $('clear').onclick=()=>{items=[];renderList();run()};
@@ -746,6 +810,7 @@ function lvlChange(){
 $('lvl').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(lvlChange,300)});
 $('preset').addEventListener('input',()=>{applyPreset();debounce()});
 ['colors','budget','smooth','blur','res'].forEach(i=>$(i).addEventListener('input',()=>{$('preset').value=''}));
+$('ppreset').addEventListener('input',()=>{if($('ppreset').value)$('pres').value=$('ppreset').value;labels();debounce()});$('pres').addEventListener('input',()=>{$('ppreset').value=''});
 applyPreset();labels();
 $('bgW').onclick=()=>{$('bg').value='#ffffff';debounce()};$('bgK').onclick=()=>{$('bg').value='#000000';debounce()};
 $('bgA').onclick=()=>{autoBg();debounce()};
