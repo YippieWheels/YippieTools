@@ -99,13 +99,13 @@ details>summary{color:var(--yl)}
 <div id="parts" class="plist"><small>Load a song first.</small></div>
 
 <label>Max shapes (triggers the tool adds; empty = none)</label>
-<input id="maxShapes" type="number" min="0" step="1" placeholder="none">
-<small>If the song is longer, its last notes are cut. The start, loop and block triggers always stay.</small>
+<div class="row"><div><input id="maxShapes" type="number" min="0" step="1" placeholder="none"></div><div><button class="s sm" id="set900" style="width:100%">Game limit: 900</button></div></div>
+<small>⚠ Happy Wheels allows at most <b>900 shapes</b> (every trigger counts). If the song is longer than the limit you set, its last notes are cut; the start, loop and block triggers always stay.</small>
 <h2>2 · Sounds</h2>
 <label>How notes become sound effects</label>
 <select id="mapMode">
-<option value="one">One sound effect for every note (default)</option>
-<option value="pitch">By pitch: low / mid / high notes use different sounds</option>
+<option value="one">One sound effect for every note</option>
+<option value="pitch" selected>By pitch: low / mid / high notes use different sounds (default)</option>
 <option value="track">By part: each track or instrument has its own sound</option>
 <option value="note">Per note: pick a sound for every note that appears</option>
 </select>
@@ -138,9 +138,12 @@ details>summary{color:var(--yl)}
 <h2>Advanced</h2>
 <label>Time resolution (ms): notes closer than this share one trigger <b id="vRes"></b></label><input id="res" type="range" min="10" max="200" step="1" value="33">
 <div class="row"><div><label>Max sounds at once (0 = all)</label><input id="poly" type="number" min="0" value="0"></div><div><label>Max notes (0 = all)</label><input id="maxNotes" type="number" min="0" value="0"></div></div>
-<label>Block length (s): long songs are split in chained blocks <b id="vSeg"></b></label><input id="seg" type="range" min="0" max="60" step="1" value="10">
-<small>0 = one single block. Blocks keep every delay short.</small>
-<div class="chk"><input id="direct" type="checkbox"><span>Sound triggers carry their own delay (about half the triggers, unverified)</span></div>
+<label>Block length (s): the song is split in chained blocks <b id="vSeg"></b></label><input id="seg" type="range" min="5" max="30" step="1" value="25">
+<small>A trigger delay can be 30 s at most, so a long song needs one timer trigger per block.</small>
+<label>Loop method</label>
+<select id="loopMethod"><option value="S">The start trigger restarts itself (a timer chain re-fires it)</option><option value="P">Through a hidden extra trigger</option></select>
+<div class="chk"><input id="direct" type="checkbox" checked><span>Sound triggers carry their own delay (about half the triggers)</span></div>
+<small>⚠ On by default. If the song plays wrong or the game lags, turn it off.</small>
 <div class="row"><div><label>Trigger-only "triggered by"</label><input id="bt" type="number" value="5"></div><div><label>Player contact</label><input id="bp" type="number" value="1"></div></div>
 <div class="row"><div><label>Click</label><input id="bk" type="number" value="6"></div><div><label>Repeat type</label><input id="rt" type="number" value="2"></div></div>
 <div class="row"><div><label>"Activate" action</label><input id="tra" type="number" value="0"></div><div><label>Sound trigger type</label><input id="tsn" type="number" value="2"></div></div>
@@ -304,11 +307,12 @@ const HWMusic = (function () {
     // ----- segments / indices (relative to TB) -----
     const slots = []; for (const e of events) { if (!slots.length || slots[slots.length - 1].t !== e.t) slots.push({ t: e.t, ev: [] }); slots[slots.length - 1].ev.push(e); }
     const lastT = slots.length ? slots[slots.length - 1].t : 0, loop = en.type === 'loop' && slots.length > 0;
-    const endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap);
-    const L = p.seg > 0 ? p.seg : Infinity, segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
-    let J = slots.length ? segOf(lastT) + 1 : 1; const jE = loop ? segOf(endT) : -1; if (loop) J = Math.max(J, jE + 1);
+    const useP = p.loopMethod === 'P', B0 = useP ? 2 : 1, dP = p.playDelay === undefined ? 0.1 : p.playDelay;           // P waits a moment, so the loop trigger has finished firing before it is activated again
+    const endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap), fireE = Math.max(lastT + 0.01, endT - dP);
+    const L = Math.min(30, p.seg > 0 ? p.seg : 30), segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
+    let J = slots.length ? segOf(lastT) + 1 : 1; const jE = loop ? segOf(fireE) : -1; if (loop) J = Math.max(J, jE + 1);
     const direct = !!p.direct;
-    let ix = 2; const iR = []; for (let j = 1; j < J; j++) iR[j] = ix++;
+    let ix = B0; const iR = []; for (let j = 1; j < J; j++) iR[j] = ix++;
     const iE = loop ? ix++ : -1;
     const slotIdx = [], soundIdx = [];
     slots.forEach((s, k) => { if (!direct) slotIdx[k] = ix++; soundIdx[k] = s.ev.map(() => ix++); });
@@ -326,8 +330,8 @@ const HWMusic = (function () {
     if (sc.text) txt(cx - 150, fy - 70, sc.text, 12, 0xffe1b8);
 
     // ----- grid for the machinery -----
-    const cols = p.cols || 60, pitch = 16, gx0 = cx - Math.min(cols, Math.max(1, total - 2)) * pitch / 2, gy0 = fy + (sc.floor ? th + 60 : 120);
-    const cell = (i) => { const k = i - 2; return [gx0 + (k % cols) * pitch + 8, gy0 + 90 + Math.floor(k / cols) * pitch + 8]; };
+    const cols = p.cols || 60, pitch = 16, gx0 = cx - Math.min(cols, Math.max(1, total - B0)) * pitch / 2, gy0 = fy + (sc.floor ? th + 60 : 120);
+    const cell = (i) => { const k = i - B0; return [gx0 + (k % cols) * pitch + 8, gy0 + 90 + Math.floor(k / cols) * pitch + 8]; };
     const mk = (i, x, y, w, h, b, t, r, d, body, extra) => {
       tri[i] = t === 1
         ? `<t x="${r1(x)}" y="${r1(y)}" w="${Math.round(w)}" h="${Math.round(h)}" a="0" b="${b}" t="1" r="${r}" sd="f" d="${dnum(d)}">\n${body.join('\n')}\n</t>`
@@ -339,7 +343,6 @@ const HWMusic = (function () {
     if (st.type === 'auto') { sx = spawn[0]; sy = spawn[1]; sw = st.w || 260; sh = st.h || 260; sb = bP; slab = 'START: automatic (zone on the spawn point)'; }
     else if (st.type === 'click') { sx = cx + (st.dx || 0); sy = fy - 45 + (st.dy || 0); sw = 90; sh = 50; sb = bC; slab = 'START: click the button'; }
     else { sx = cx + (st.dx === undefined ? -150 : st.dx); sy = fy + (sc.floor ? 160 : 40) + (st.dy || 0); sw = 40; sh = 40; sb = bT; sr = 2; slab = 'START: not connected. Activate it from one of your triggers'; }
-    mk(0, sx, sy, sw, sh, sb, 1, sr, 0, [tact(1)]);
     lay.push({ k: 'start', x: sx - sw / 2, y: sy - sh / 2, w: sw, h: sh, l: slab });
     label(sx, sy + sh / 2 + 12, slab, 9, 0xff6a4a);
     if (st.type === 'click' && st.button !== false) {
@@ -348,9 +351,10 @@ const HWMusic = (function () {
     }
     // player trigger P (index 1): the real "start playing" action
     const body = (j) => { const b = []; if (j + 1 < J) b.push(tact(iR[j + 1])); if (loop && jE === j) b.push(tact(iE)); segTargets[j].forEach((t) => b.push(tact(t))); return b; };
-    mk(1, gx0 + 8, gy0 + 40, 12, 12, bT, 1, 2, 0, body(0));
+    if (useP) { mk(0, sx, sy, sw, sh, sb, 1, sr, 0, [tact(1)]); mk(1, gx0 + 8, gy0 + 40, 12, 12, bT, 1, 2, dP, body(0)); }
+    else mk(0, sx, sy, sw, sh, sb, 1, loop || st.type === 'trigger' ? 2 : sr, dP, body(0));   // the start trigger itself carries the first block and is re-fired by the loop trigger
     for (let j = 1; j < J; j++) { const [x, y] = cell(iR[j]); mk(iR[j], x, y, 12, 12, bT, 1, rT, L, body(j)); }
-    if (loop) { const [x, y] = cell(iE); mk(iE, x, y, 12, 12, bT, 1, rT, Math.max(0, endT - (L === Infinity ? 0 : jE * L)), [tact(1)]); }
+    if (loop) { const [x, y] = cell(iE); mk(iE, x, y, 12, 12, bT, 1, rT, Math.max(0, fireE - (L === Infinity ? 0 : jE * L)), [tact(0)].slice(0, 0).concat(useP ? [tact(1)] : [tact(0)])); }
     const volOf = (e) => (p.velVol ? Math.max(0.1, Math.min(1, Math.round(e.vel / 127 * 100) / 100)) : (p.volume === undefined ? 1 : p.volume));
     slots.forEach((s, k) => {
       const j = segOf(s.t), rel = Math.max(0, s.t - (L === Infinity ? 0 : j * L));
@@ -358,8 +362,8 @@ const HWMusic = (function () {
       s.ev.forEach((e, q) => { const [x, y] = cell(soundIdx[k][q]); mk(soundIdx[k][q], x, y, 12, 12, bT, 2, rT, direct ? rel : 0, null, { s: e.id + (p.sOff || 0), v: volOf(e) }); });
     });
     for (let i = 0; i < total; i++) trig.push(tri[i]);
-    const rows = Math.max(1, Math.ceil((total - 2) / cols));
-    lay.push({ k: 'grid', x: gx0, y: gy0 + 90, w: Math.min(cols, Math.max(1, total - 2)) * pitch, h: rows * pitch, l: 'trigger machinery (' + total + ' triggers)' });
+    const rows = Math.max(1, Math.ceil((total - B0) / cols));
+    lay.push({ k: 'grid', x: gx0, y: gy0 + 90, w: Math.min(cols, Math.max(1, total - B0)) * pitch, h: rows * pitch, l: 'trigger machinery (' + total + ' triggers)' });
     label(cx, gy0 + 62, 'MUSIC TRIGGERS: ' + total + ' (do not move or delete)', 9, 0xff6a4a);
 
     const pieces = { shapes, specials, groups, trig };
@@ -372,10 +376,11 @@ const HWMusic = (function () {
   function countTriggers(events, p) {
     const en = p.end || { type: 'loop', gap: 0.5 };
     let nSlots = 0, lastT = 0, prev = null; for (const e of events) { if (prev === null || e.t !== prev) nSlots++; prev = e.t; lastT = e.t; }
-    const loop = en.type === 'loop' && nSlots > 0, endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap);
-    const L = p.seg > 0 ? p.seg : Infinity, segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
-    let J = nSlots ? segOf(lastT) + 1 : 1; if (loop) J = Math.max(J, segOf(endT) + 1);
-    return 2 + (J - 1) + (loop ? 1 : 0) + (p.direct ? 0 : nSlots) + events.length;
+    const loop = en.type === 'loop' && nSlots > 0, endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap), fireE = Math.max(lastT + 0.01, endT - (p.playDelay === undefined ? 0.1 : p.playDelay));
+    const B0 = p.loopMethod === 'P' ? 2 : 1;
+    const L = Math.min(30, p.seg > 0 ? p.seg : 30), segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
+    let J = nSlots ? segOf(lastT) + 1 : 1; if (loop) J = Math.max(J, segOf(fireE) + 1);
+    return B0 + (J - 1) + (loop ? 1 : 0) + (p.direct ? 0 : nSlots) + events.length;
   }
   /* keeps the longest prefix of the song whose trigger count (start/play/relays/loop included) fits max */
   function fitTriggers(events, p, max) {
@@ -426,7 +431,7 @@ const PAL=['thud 4','long drum','pogo 1','ping','select 1','beep on'].map(n=>SNM
 const DRUMDEF={kick:SNM['thud 1'],snare:SNM['wood snap 1'],hat:SNM['select 1'],tom:SNM['long drum'],cym:SNM['shatter 1'],other:SNM['switch on']};
 const DRUMNAME={kick:'Kick',snare:'Snare',hat:'Hi-hat',tom:'Toms',cym:'Cymbals',other:'Other percussion'};
 let song=null,cur=null,last=null,timer=null,wasFull=true,evRes=null;
-const MS={mode:'one',one:SNM['ping'],nb:3,how:'count',bands:PAL.slice(1,5),tracks:{},drums:Object.assign({},DRUMDEF),notes:{}};
+const MS={mode:'pitch',one:SNM['ping'],nb:3,how:'count',bands:PAL.slice(1,5),tracks:{},drums:Object.assign({},DRUMDEF),notes:{}};
 const enabled={};
 
 /* ---------- audio (preview + picker) ---------- */
@@ -506,7 +511,7 @@ function renderMap(){
 function mapObj(){const ps=activeParts();return {mode:MS.mode,one:MS.one,bands:MS.bands.slice(0,MS.nb),edges:HWMusic.bandEdges(ps,MS.nb,MS.how),tracks:MS.tracks,drums:MS.drums,notes:MS.notes}}
 function params(){
   const full=chk('sFloor');
-  const p={cx:num('cx'),cy:num('cy'),labels:chk('labels'),vehicle:num('veh'),seg:num('seg'),direct:chk('direct'),velVol:chk('velVol'),
+  const p={cx:num('cx'),cy:num('cy'),labels:chk('labels'),vehicle:num('veh'),seg:num('seg'),loopMethod:$('loopMethod').value,direct:chk('direct'),velVol:chk('velVol'),
     bTimer:num('bt'),bPlayer:num('bp'),bClick:num('bk'),rTimer:num('rt'),trigAct:num('tra'),tSound:num('tsn'),volume:num('vol'),sOff:num('sOff'),
     scene:{floor:full,walls:chk('sWalls'),stripe:chk('sStripe'),text:chk('sTxt')?($('sTxtVal').value||({auto:'Music starts on its own',click:'Click the red button to play the music',trigger:'Music: start it with your own trigger'})[$('sType').value]):''},
     start:{type:$('sType').value},end:{type:$('eType').value,gap:num('gap')}};
@@ -524,12 +529,12 @@ function run(){
   const r=HWMusic.build(ev.events,p);
   r.out=cur?HWMusic.mergeLevel($('lvl').value,r.pieces):r.xml;last={r,p,ev};
   $('copy').disabled=$('dl').disabled=false;
-  const kb=Math.round(r.out.length/1024);
+  const kb=Math.round(r.out.length/1024),tot=r.triggers+(cur?cur.trigs:0);
   $('stats').innerHTML=`<b>${ev.events.length}</b> sounds in <b>${r.slots}</b> time slots · <b>${r.triggers}</b> triggers${r.segments>1?` (${r.segments} blocks)`:''} · song <b>${r.duration.toFixed(1)} s</b>${r.loop?' (with loop pause)':''} · <b>${kb>=1024?(kb/1024).toFixed(2)+' MB':kb+' KB'}</b>`+
    (r.art?` · art ${(cur?cur.art:0)+r.art}`:'')+
    (ev.dropped?`<br>${ev.dropped} notes merged or dropped (same sound in the same instant, or limits).`:'')+(ev.cutN?`<br><span class="warn">Cut by Max shapes: ${ev.cutN} of ${ev.all.length} sounds removed from the end. Only the first ${ev.events.length} are kept (${ev.duration.toFixed(1)} s of ${ev.all[ev.all.length-1].t.toFixed(1)} s). ${HWMusic.countTriggers([],p)} structural triggers stay.</span>`:'')+
-   (r.triggers>4000?'<br><span class="warn">Very many triggers: the game may lag or freeze. Shorten the song, raise the time resolution or use fewer parts.</span>':r.triggers>1500?'<br><span class="warn">Many triggers: it may be heavy for the game. Lower the detail if it lags.</span>':'')+
-   (p.direct?'<br><span class="warn">"Sound triggers carry their own delay" is unverified: if the notes all play at once, turn it off.</span>':'')+
+   (tot>900?`<br><span class="warn">⚠ ${tot} shapes${cur?' (including your level\'s '+cur.trigs+' triggers)':''}: Happy Wheels allows at most 900. Set "Max shapes" (button: Game limit: 900) to cut the end of the song, or use fewer parts / a bigger time resolution.</span>`:'')+
+   (p.direct?'<br><small>⚠ "Sound triggers carry their own delay" is on. If the song plays wrong or lags, turn it off in Advanced.</small>':'')+
    (!cur&&!p.scene.floor?'<br><span class="warn">New level without a platform: the player will fall. Tick Platform or paste your level.</span>':'');
   draw();drawMap();
 }
@@ -575,8 +580,9 @@ function drawMap(){
 }
 
 /* ---------- wiring ---------- */
-['tStart','tEnd','speed','minVel','mapMode','velVol','sType','eType','gap','sFloor','sWalls','sStripe','sTxt','sTxtVal','labels','veh','cx','cy','res','poly','maxNotes','maxShapes','seg','direct','bt','bp','bk','rt','tra','tsn','vol','sOff'].forEach(i=>$(i).addEventListener('input',()=>{if(i==='mapMode')renderMap();deb()}));
+['tStart','tEnd','speed','minVel','mapMode','velVol','sType','eType','gap','sFloor','sWalls','sStripe','sTxt','sTxtVal','labels','veh','cx','cy','res','poly','maxNotes','maxShapes','seg','loopMethod','direct','bt','bp','bk','rt','tra','tsn','vol','sOff'].forEach(i=>$(i).addEventListener('input',()=>{if(i==='mapMode')renderMap();deb()}));
 $('mapMode').addEventListener('change',renderMap);
+$('set900').onclick=()=>{$('maxShapes').value=Math.max(1,900-(cur?cur.trigs:0));deb()};
 $('presetFull').onclick=()=>{['sFloor','sWalls','sStripe','sTxt'].forEach(i=>$(i).checked=true);deb()};
 $('presetLoose').onclick=()=>{['sFloor','sWalls','sStripe','sTxt'].forEach(i=>$(i).checked=false);deb()};
 $('drop').onclick=()=>$('file').click();$('file').onchange=e=>loadFile(e.target.files[0]);
