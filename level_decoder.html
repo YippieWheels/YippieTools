@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Happy Wheels · Level Record Decoder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--pn:#0d0d0d;--tx:#ff4a3a;--mu:#c9544a;--ac:#ff1a1a;--bd:#7a0c0c;--hi:#ffe1b8;--yl:#ffd23f;--f:"VT323","Courier New",ui-monospace,monospace;--fh:"Silkscreen","VT323","Courier New",monospace}
+*{box-sizing:border-box;border-radius:0}
+::selection{background:var(--ac);color:#000}
+*{scrollbar-width:thin;scrollbar-color:#b00 #120000}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:#120000}::-webkit-scrollbar-thumb{background:#b00;border:2px solid #120000}
+body::before{content:"";position:fixed;inset:6px;border:1px solid var(--ac);pointer-events:none;z-index:9998}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(255,0,0,.045) 0 1px,transparent 1px 3px)}
+b,strong{font-weight:400;color:var(--hi)}
+a{color:var(--yl)}a:hover{background:var(--yl);color:#000}
+:focus-visible{outline:2px dashed var(--yl);outline-offset:2px}
+
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.3 var(--f);min-height:100vh}
+.wrap{max-width:900px;margin:0 auto;padding:30px 24px 50px}
+h1{font:400 22px/1.25 var(--fh);letter-spacing:.06em;margin:0 0 8px;color:var(--ac);text-shadow:2px 2px 0 #4a0000}
+h1::before{content:"\2605 ";color:var(--yl);text-shadow:none}
+h2{font:400 14px/1.2 var(--fh);margin:26px 0 8px;padding-top:12px;border-top:1px dashed var(--ac);color:var(--ac);letter-spacing:.05em}
+h2::before{content:"\2605 ";color:var(--yl)}
+p{margin:6px 0}small,.mu{color:var(--mu);font-size:16px}
+.ai{margin:12px 0;padding:8px 10px;border:1px dashed var(--yl);background:#1a1400;color:var(--yl);font-size:17px;line-height:1.25}
+#drop{border:2px dashed var(--ac);padding:26px 14px;text-align:center;color:var(--mu);cursor:pointer;background:#0f0000}
+#drop:hover,#drop.over{background:#1c0000;color:var(--hi)}
+.files{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.slot{border:1px solid var(--bd);background:var(--pn);padding:8px 10px;min-height:62px}
+.slot b{display:block;font:400 11px var(--fh);color:var(--yl);letter-spacing:.05em;margin-bottom:4px}
+.slot.ok{border-color:var(--ac)}.slot span{word-break:break-all}
+label{display:block;margin-top:14px;color:var(--mu);font-size:17px}
+input[type=text]{width:100%;background:#000;color:var(--hi);border:1px solid var(--bd);padding:6px 8px;font:18px var(--f)}
+input[type=text]:hover{border-color:var(--ac)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:180px}
+button{background:var(--ac);color:#000;border:1px solid var(--ac);padding:8px 14px;font:400 18px var(--f);letter-spacing:.04em;cursor:pointer;margin-top:12px;box-shadow:3px 3px 0 #4a0000}
+button:hover:not(:disabled){background:#000;color:var(--ac)}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #4a0000}
+button.s{background:#000;color:var(--tx);border:1px solid var(--bd)}
+button.s:hover:not(:disabled){background:var(--bd);color:var(--hi);border-color:var(--ac)}
+button:disabled{opacity:.4;cursor:default;box-shadow:none}
+#status{margin-top:12px;border:1px solid var(--bd);background:var(--pn);padding:8px 12px;line-height:1.35}
+#status.err{border-color:#ff5a4d;color:#ff8a8a}#status.good{border-color:#2fbf5a;color:#7dffa0}
+.tut{margin:8px 0;padding-left:26px;line-height:1.4}.tut li{margin:5px 0}.tut li::marker{color:var(--yl);font-family:var(--fh)}
+#out{display:none}
+@media(max-width:640px){.files{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){button:active:not(:disabled){transform:none}}
+
+</style></head><body><div class="wrap">
+<h1>Level Record Decoder</h1>
+<p class="mu">Turns the binary <b>get_level.hw</b> file (the level record) into readable LevelXML. Everything runs in your browser: nothing is uploaded.</p>
+<div class="ai">Levels belong to their authors. Use this to study, convert or back up levels for your own use; do not republish other people's levels without permission.</div>
+
+<h2>1. Files</h2>
+<div id="drop" tabindex="0" role="button" aria-label="Choose files">Drop both <b>get_level.hw</b> files here (metadata + record),<br>or click to choose them. They are told apart automatically by their content.</div>
+<input id="file" type="file" multiple hidden>
+<div class="files">
+  <div class="slot" id="slotMeta"><b>METADATA (XML)</b><span class="mu">not loaded: optional if you type the author ID</span></div>
+  <div class="slot" id="slotRec"><b>RECORD (BINARY)</b><span class="mu">not loaded</span></div>
+</div>
+<label>Author ID (the <b>ui</b> attribute of the metadata XML)
+  <input id="uid" type="text" inputmode="numeric" placeholder="e.g. 11115790" autocomplete="off"></label>
+<div class="row"><button id="go" disabled>Decode</button><button id="reset" class="s">Clear</button></div>
+<div id="status" style="display:none"></div>
+
+<div id="out">
+<h2>2. LevelXML</h2>
+<div class="row"><button id="dl">Download .xml</button><button id="cp" class="s">Copy to clipboard</button></div>
+</div>
+
+<h2>Tutorial: getting the required files</h2>
+<ol class="tut">
+<li>Open the level you want to get the level code from.</li>
+<li>Right-click anywhere on the page and choose <b>Inspect</b>.</li>
+<li>Go to the <b>Network</b> tab and reload the page if needed.</li>
+<li>Use the filter box in the Network tab to search for <b>get_level.hw</b>. Two files with that name will show up.</li>
+<li>Right-click each one and save/download it (for example with "Save response as&hellip;"). Download both.</li>
+<li>Drop both files into the box above. They have the same name, but the app tells them apart by their content.</li>
+</ol>
+<p class="mu">Tip: save the files with the browser&rsquo;s save option. Copying the response as text corrupts the binary record.</p>
+</div>
+<script>
+const PIHEX="243f6a8885a308d313198a2e03707344a4093822299f31d0082efa98ec4e6c89452821e638d01377be5466cf34e90c6cc0ac29b7c97c50dd3f84d5b5b54709179216d5d98979fb1bd1310ba698dfb5ac2ffd72dbd01adfb7b8e1afed6a267e96ba7c9045f12c7f9924a19947b3916cf70801f2e2858efc16636920d871574e69a458fea3f4933d7e0d95748f728eb658718bcd5882154aee7b54a41dc25a59b59c30d5392af26013c5d1b023286085f0ca417918b8db38ef8e79dcb0603a180e6c9e0e8bb01e8a3ed71577c1bd314b2778af2fda55605c60e65525f3aa55ab945748986263e8144055ca396a2aab10b6b4cc5c341141e8cea15486af7c72e993b3ee1411636fbc2a2ba9c55d741831f6ce5c3e169b87931eafd6ba336c24cf5c7a325381289586773b8f48986b4bb9afc4bfe81b6628219361d809ccfb21a991487cac605dec8032ef845d5de98575b1dc262302eb651b8823893e81d396acc50f6d6ff383f442392e0b4482a484200469c8f04a9e1f9b5e21c66842f6e96c9a670c9c61abd388f06a51a0d2d8542f68960fa728ab5133a36eef0b6c137a3be4ba3bf0507efb2a98a1f1651d39af017666ca593e82430e888cee8619456f9fb47d84a5c33b8b5ebee06f75d885c12073401a449f56c16aa64ed3aa62363f77061bfedf72429b023d37d0d724d00a1248db0fead349f1c09b075372c980991b7b25d479d8f6e8def7e3fe501ab6794c3b976ce0bd04c006bac1a94fb6409f60c45e5c9ec2196a246368fb6faf3e6c53b51339b2eb3b52ec6f6dfc511f9b30952ccc814544af5ebd09bee3d004de334afd660f2807192e4bb3c0cba85745c8740fd20b5f39b9d3fbdb5579c0bd1a60320ad6a100c6402c7279679f25fefb1fa3cc8ea5e9f8db3222f83c7516dffd616b152f501ec8ad0552ab323db5fafd23876053317b483e00df829e5c57bbca6f8ca01a87562edf1769dbd542a8f6287effc3ac6732c68c4f5573695b27b0bbca58c8e1ffa35db8f011a010fa3d98fd2183b84afcb56c2dd1d35b9a53e479b6f84565d28e49bc4bfb9790e1ddf2daa4cb7e3362fb1341cee4c6e8ef20cada36774c01d07e9efe2bf11fb495dbda4dae909198eaad8e716b93d5a0d08ed1d0afc725e08e3c5b2f8e7594b78ff6e2fbf2122b648888b812900df01c4fad5ea0688fc31cd1cff191b3a8c1ad2f2f2218be0e1777ea752dfe8b021fa1e5a0cc0fb56f74e818acf3d6ce89e299b4a84fe0fd13e0b77cc43b81d2ada8d9165fa2668095770593cc7314211a1477e6ad206577b5fa86c75442f5fb9d35cfebcdaf0c7b3e89a0d6411bd3ae1e7e4900250e2d2071b35e226800bb57b8e0af2464369bf009b91e5563911d59dfa6aa78c14389d95a537f207d5ba202e5b9c5832603766295cfa911c819684e734a41b3472dca7b14a94a1b5100529a532915d60f573fbc9bc6e42b60a47681e6740008ba6fb5571be91ff296ec6b2a0dd915b6636521e7b9f9b6ff34052ec585566453b02d5da99f8fa108ba47996e85076a4b7a70e9b5b32944db75092ec4192623ad6ea6b049a7df7d9cee60b88fedb266ecaa8c71699a17ff5664526cc2b19ee1193602a575094c29a0591340e4183a3e3f54989a5b429d656b8fe4d699f73fd6a1d29c07efe830f54d2d38e6f0255dc14cdd20868470eb266382e9c6021ecc5e09686b3f3ebaefc93c9718146b6a70a1687f358452a0e286b79c5305aa5007373e07841c7fdeae5c8e7d44ec5716f2b8b03ada37f0500c0df01c1f040200b3ffae0cf51a3cb574b225837a58dc0921bdd19113f97ca92ff69432477322f547013ae5e58137c2dadcc8b576349af3dda7a94461460fd0030eecc8c73ea4751e41e238cd993bea0e2f3280bba1183eb3314e548b384f6db9086f420d03f60a04bf2cb8129024977c795679b072bcaf89afde9a771fd9930810b38bae12dccf3f2e5512721f2e6b7124501adde69f84cd877a5847187408da17bc9f9abce94b7d8cec7aec3adb851dfa63094366c464c3d2ef1c18473215d908dd433b3724c2ba1612a14d432a65c45150940002133ae4dd71dff89e10314e5581ac77d65f11199b043556f1d7a3c76b3c11183b5924a509f28fe6ed97f1fbfa9ebabf2c1e153c6e86e34570eae96fb1860e5e0a5a3e2ab3771fe71c4e3d06fa2965dcb999e71d0f803e89d65266c8252e4cc9789c10b36ac6150eba94e2ea78a5fc3c531e0a2df4f2f74ea7361d2b3d1939260f19c279605223a708f71312b6ebadfe6eeac31f66e3bc4595a67bc883b17f37d1018cff28c332ddefbe6c5aa56558218568ab9802eecea50fdb2f953b2aef7dad5b6e2f841521b62829076170ecdd4775619f151013cca830eb61bd960334fe1eaa0363cfb5735c904c70a239d59e9e0bcbaade14eecc86bc60622ca79cab5cabb2f3846e648b1eaf19bdf0caa02369b9655abb5040685a323c2ab4b3319ee9d5c021b8f79b540b19875fa09995f7997e623d7da8f837889a97e32d7711ed935f166812810e358829c7e61fd696dedfa17858ba9957f584a51b2272639b83c3ff1ac24696cdb30aeb532e30548fd948e46dbc312858ebf2ef34c6ffeafe28ed61ee7c3c735d4a14d9e864b7e342105d14203e13e045eee2b6a3aaabeadb6c4f15facb4fd0c742f442ef6abbb5654f3b1d41cd2105d81e799e86854dc7e44b476a3d816250cf62a1f25b8d2646fc8883a0c1c7b6a37f1524c369cb749247848a0b5692b285095bbf00ad19489d1462b17423820e0058428d2a0c55f5ea1dadf43e233f70613372f0928d937e41d65fecf16c223bdb7cde3759cbee74604085f2a7ce77326ea607808419f8509ee8efd85561d99735a969a7aac50c06c25a04abfc800bcadc9e447a2ec3453484fdd567050e1e9ec9db73dbd3105588cd675fda79e3674340c5c43465713e38d83d28f89ef16dff20153e21e78fb03d4ae6e39f2bdb83adf7e93d5a68948140f7f64c261c94692934411520f77602d4f7bcf46b2ed4a20068d40824713320f46a43b7d4b7500061af1e39f62e9724454614214f74bf8b88404d95fc1d96b591af70f4ddd366a02f45bfbc09ec03bd97857fac6dd031cb850496eb27b355fd3941da2547e6abca0a9a28507825530429f40a2c86dae9b66dfb68dc1462d7486900680ec0a427a18dee4f3ffea2e887ad8cb58ce0067af4d6b6aace1e7cd3375fecce78a399406b2a4220fe9e35d9f385b9ee39d7ab3b124e8b1dc9faf74b6d185626a36631eae397b23a6efa74dd5b43326841e7f7ca7820fbfb0af54ed8feb397454056acba48952755533a3a20838d87fe6ba9b7d096954b55a867bca1159a58cca9296399e1db33a62a4a563f3125f95ef47e1c9029317cfdf8e80204272f7080bb155c05282ce395c11548e4c66d2248c1133fc70f86dc07f9c9ee41041f0f404779a45d886e17325f51ebd59bc0d1f2bcc18f41113564257b7834602a9c60dff8e8a31f636c1b0e12b4c202e1329eaf664fd1cad181156b2395e0333e92e13b240b62eebeb92285b2a20ee6ba0d99de720c8c2da2f728d012784595b794fd647d0862e7ccf5f05449a36f877d48fac39dfd27f33e8d1e0a476341992eff743a6f6eabf4f8fd37a812dc60a1ebddf8991be14cdb6e6b0dc67b55106d672c372765d43bdcd0e804f1290dc7cc00ffa3b5390f92690fed0b667b9ffbcedb7d9ca091cf0bd9155ea3bb132f88515bad247b9479bf763bd6eb37392eb3cc1159798026e297f42e312d6842ada7c66a2b3b12754ccc782ef11c6a124237b79251e706a1bbe64bfb63501a6b101811caedfa3d25bdd8e2e1c3c9444216590a121386d90cec6ed5abea2a64af674eda86a85fbebfe98864e4c3fe9dbc8057f0f7c08660787bf86003604dd1fd8346f6381fb07745ae04d736fccc83426b33f01eab71b08041873c005e5f77a057bebde8ae2455464299bf582e614e58f48ff2ddfda2f474ef388789bdc25366f9c3c8b38e74b475f25546fcd9b97aeb26618b1ddf84846a0e79915f95e2466e598e20b457708cd55591c902de4cb90bace1bb8205d011a862487574a99eb77f19b6e0a9dc09662d09a1c4324633e85a1f0209f0be8c4a99a0251d6efe101ab93d1d0ba5a4dfa186f20f2868f169dcb7da83573906fea1e2ce9b4fcd7f5250115e01a70683faa002b5c40de6d0279af88c27773f8641c3604c0661a806b5f0177a28c0f586e0006058aa30dc7d6211e69ed72338ea6353c2dd94c2c21634bbcbee5690bcb6deebfc7da1ce591d766f05e4094b7c018839720a3d7c927c2486e3725f724d9db91ac15bb4d39eb8fced54557808fca5b5d83d7cd34dad0fc41e50ef5eb161e6f8a28514d96c51133c6fd5c7e756e14ec4362abfceddc6c837d79a323492638212670efa8e406000e03a39ce37d3faf5cfabc277375ac52d1b5cb0679e4fa33742d382274099bc9bbed5118e9dbf0f7315d62d1c7ec700c47bb78c1b6b21a19045b26eb1be6a366eb45748ab2fbc946e79c6a376d26549c2c8530ff8ee468dde7dd5730a1d4cd04dc62939bbdba9ba4650ac9526e8be5ee304a1fad5f06a2d519a63ef8ce29a86ee22c089c2b843242ef6a51e03aa9cf2d0a483c061ba9be96a4d8fe51550ba645bd62826a2f9a73a3ae14ba99586ef5562e9c72fefd3f752f7da3f046f6977fa0a5980e4a91587b086019b09e6ad3b3ee593e990fd5a9e34d7972cf0b7d9022b8b5196d5ac3a017da67dd1cf3ed67c7d2d281f9f25cfadf2b89b5ad6b4725a88f54ce029ac71e019a5e647b0acfded93fa9be8d3c48d283b57ccf8d5662979132e28785f0191ed756055f7960e44e3d35e8c15056dd488f46dba03a161250564f0bdc3eb9e153c9057a297271aeca93a072a1b3f6d9b1e6321f5f59c66fb26dcf3197533d928b155fdf5035634828aba3cbb28517711c20ad9f8abcc5167ccad925f4de817513830dc8e379d58629320f991ea7a90c2fb3e7bce5121ce64774fbe32a8b6e37ec3293d4648de53696413e680a2ae0810dd6db22469852dfd09072166b39a460a6445c0dd586cdecf1c20c8ae5bbef7dd1b588d40ccd2017f6bb4e3bbdda26a7e3a59ff453e350a44bcb4cdd572eacea8fa6484bb8d6612aebf3c6f47d29be463542f5d9eaec2771bf64e6370740e0d8de75b1357f8721671af537d5d4040cb084eb4e2cc34d2466a0115af84e1b0042895983a1d06b89fb4ce6ea0486f3f3b823520ab82011a1d4b277227f8611560b1e7933fdcbb3a792b344525bda08839e151ce794b2f32c9b7a01fbac9e01cc87ebcc7d1f6cf0111c3a1e8aac71a908749d44fbd9ad0dadecbd50ada380339c32ac69136678df9317ce0b12b4ff79e59b743f5bb3af2d519ff27d9459cbf97222c15e6fc2a0f91fc719b941525fae59361ceb69cebc2a8645912baa8d1b6c1075ee3056a0c10d25065cb03a442e0ec6e0e1698db3b4c98a0be3278e9649f1f9532e0d392dfd3a0342b8971f21e1b0a74414ba3348cc5be7120c37632d8df359f8d9b992f2ee60b6f470fe3f11de54cda541edad891ce6279cfcd3e7e6f1618b166fd2c1d05848fd2c5f6fb2299f523f357a632762393a8353156cccd02acf081625a75ebb56e16369788d273ccde96629281b949d04c50901b71c65614e6c6c7bd327a140a45e1d006c3f27b9ac9aa53fd62a80f00bb25bfe235bdd2f671126905b2040222b6cbcf7ccd769c2b53113ec01640e3d338abbd602547adf0ba38209cf746ce7677afa1c52075606085cbfe4e8ae88dd87aaaf9b04cf9aa7e1948c25c02fb8a8c01c36ae4d6ebe1f990d4f869a65cdea03f09252dc208e69fb74e6132ce77e25b578fdfe33ac372e6";
+function makeBlowfish(PIHEX){
+  const W=[];for(let i=0;i<PIHEX.length;i+=8)W.push(parseInt(PIHEX.slice(i,i+8),16)|0);
+  const P0=W.slice(0,18),S0=[0,1,2,3].map(k=>W.slice(18+k*256,18+(k+1)*256));
+  return function(keyBytes){
+    const P=P0.slice(),S=S0.map(a=>a.slice());
+    function F(x){return (((S[0][x>>>24]+S[1][(x>>>16)&255])|0)^S[2][(x>>>8)&255])+S[3][x&255]|0}
+    function enc(l,r){for(let i=0;i<16;i+=2){l^=P[i];r^=F(l);r^=P[i+1];l^=F(r)}l^=P[16];r^=P[17];return [r|0,l|0]}
+    function dec(l,r){for(let i=17;i>1;i-=2){l^=P[i];r^=F(l);r^=P[i-1];l^=F(r)}l^=P[1];r^=P[0];return [r|0,l|0]}
+    let j=0;for(let i=0;i<18;i++){let d=0;for(let k=0;k<4;k++){d=(d<<8)|keyBytes[j];j=(j+1)%keyBytes.length}P[i]^=d}
+    let l=0,r=0;
+    for(let i=0;i<18;i+=2){[l,r]=enc(l,r);P[i]=l;P[i+1]=r}
+    for(let k=0;k<4;k++)for(let i=0;i<256;i+=2){[l,r]=enc(l,r);S[k][i]=l;S[k][i+1]=r}
+    return {enc,dec};
+  }
+}
+function bfCbcDecrypt(bf,data,iv){
+  const out=new Uint8Array(data.length);let pl=((iv[0]<<24)|(iv[1]<<16)|(iv[2]<<8)|iv[3])|0,pr=((iv[4]<<24)|(iv[5]<<16)|(iv[6]<<8)|iv[7])|0;
+  const dv=new DataView(data.buffer,data.byteOffset,data.byteLength),ov=new DataView(out.buffer);
+  for(let o=0;o<data.length;o+=8){const cl=dv.getInt32(o),cr=dv.getInt32(o+4);const [l,r]=bf.dec(cl,cr);ov.setInt32(o,l^pl);ov.setInt32(o+4,r^pr);pl=cl;pr=cr}
+  return out;
+}
+
+
+const $=id=>document.getElementById(id);
+let meta=null,rec=null,fullXML='',outName='level.xml';
+const enc=new TextEncoder(),IV=enc.encode('abcd1234');
+const mkBF=makeBlowfish(PIHEX);
+function say(t,cls){const s=$('status');s.style.display='block';s.className=cls||'';s.textContent=t}
+function fmt(n){return n>1048576?(n/1048576).toFixed(2)+' MB':n>1024?(n/1024).toFixed(1)+' KB':n+' B'}
+function refresh(){
+  $('go').disabled=!(rec&&/^\d+$/.test($('uid').value.trim()));
+  $('slotMeta').classList.toggle('ok',!!meta);$('slotRec').classList.toggle('ok',!!rec);
+}
+function setSlot(el,name,extra){el.querySelector('span').className='';el.querySelector('span').textContent=name+(extra?'  ·  '+extra:'')}
+async function addFiles(list){
+  for(const f of list){
+    const buf=new Uint8Array(await f.arrayBuffer());
+    const head=new TextDecoder().decode(buf.slice(0,200)).trimStart();
+    if(head.startsWith('<?xml')||head.startsWith('<lvs')){
+      const txt=new TextDecoder().decode(buf);
+      const d=new DOMParser().parseFromString(txt,'text/xml');const lv=d.querySelector('lv');
+      if(!lv){say('This XML does not contain a level (<lv>).','err');continue}
+      meta={id:lv.getAttribute('id'),name:lv.getAttribute('ln'),author:lv.getAttribute('un'),ui:lv.getAttribute('ui')};
+      setSlot($('slotMeta'),f.name,'"'+meta.name+'" by '+meta.author+' (ui '+meta.ui+')');
+      if(meta.ui)$('uid').value=meta.ui;
+    }else{
+      rec={name:f.name,data:buf};setSlot($('slotRec'),f.name,fmt(buf.length));
+    }
+  }
+  refresh();
+  if(!rec)say('The record file (the big binary one) is missing.','');
+  else if(!/^\d+$/.test($('uid').value.trim()))say('The author ID is missing: load the metadata XML or type it in.','');
+  else{say('Ready. Press Decode.','')}
+}
+async function inflate(u8){
+  if(typeof DecompressionStream==='undefined')throw new Error('Your browser does not support DecompressionStream; use a recent Chrome, Edge, Firefox or Safari.');
+  const ds=new DecompressionStream('deflate');const w=ds.writable.getWriter();w.write(u8);w.close();
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+}
+async function decode(){
+  const uid=$('uid').value.trim();
+  try{
+    say('Decoding…','');await new Promise(r=>setTimeout(r,30));
+    const d=rec.data;
+    if(d.length%8!==0)throw new Error('The size ('+d.length+' bytes) is not a multiple of 8: the file looks incomplete or is not a record. Save it with the browser\'s save option in the Network tab, do not copy it as text.');
+    const bf=mkBF(enc.encode('eatshit'+uid));
+    const out=bfCbcDecrypt(bf,d,IV);
+    const pad=out[out.length-1];
+    let ok=pad>=1&&pad<=8;for(let i=0;ok&&i<pad;i++)if(out[out.length-1-i]!==pad)ok=false;
+    if(!ok)throw new Error('Invalid padding: the author ID ('+uid+') does not match this level, or the file is damaged. Use the ui attribute from the XML of that same level.');
+    const raw=await inflate(out.subarray(0,out.length-pad));
+    fullXML=new TextDecoder().decode(raw);
+    if(!fullXML.trimStart().startsWith('<levelXML'))throw new Error('Decrypted, but the content does not start with <levelXML>.');
+    const v=(fullXML.match(/<info[^>]*\sv="([^"]*)"/)||[])[1];
+    const base=(meta?meta.name+'_'+meta.id:(rec.name.replace(/\.[^.]*$/,'')||'level')).replace(/[^\w\-. ]+/g,'_').trim()||'level';
+    outName=base+'.xml';
+    $('out').style.display='block';
+    say('✔ Done'+(meta?': "'+meta.name+'" by '+meta.author:'')+'. LevelXML size: '+fmt(raw.length)+(v?', editor version '+v:'')+'. Use the buttons below to download or copy it.','good');
+  }catch(e){$('out').style.display='none';fullXML='';say('✖ '+e.message,'err')}
+}
+$('drop').onclick=()=>$('file').click();
+$('drop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
+$('file').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
+['dragenter','dragover'].forEach(n=>$('drop').addEventListener(n,e=>{e.preventDefault();$('drop').classList.add('over')}));
+['dragleave','drop'].forEach(n=>$('drop').addEventListener(n,e=>{e.preventDefault();$('drop').classList.remove('over')}));
+$('drop').addEventListener('drop',e=>addFiles([...e.dataTransfer.files]));
+$('uid').oninput=refresh;
+$('go').onclick=decode;
+$('reset').onclick=()=>{meta=rec=null;fullXML='';$('uid').value='';$('out').style.display='none';$('status').style.display='none';
+  $('slotMeta').querySelector('span').className='mu';$('slotMeta').querySelector('span').textContent='not loaded: optional if you type the author ID';
+  $('slotRec').querySelector('span').className='mu';$('slotRec').querySelector('span').textContent='not loaded';refresh()};
+$('dl').onclick=()=>{const b=new Blob([fullXML],{type:'application/xml'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=outName;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+$('cp').onclick=async()=>{try{await navigator.clipboard.writeText(fullXML);say('Copied ('+fmt(fullXML.length)+').','good')}catch(e){say('Could not copy (file too large or permission denied). Use Download.','err')}};
+refresh();
+</script></body></html>

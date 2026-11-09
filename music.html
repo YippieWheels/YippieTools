@@ -142,8 +142,10 @@ details>summary{color:var(--yl)}
 <small>A trigger delay can be 30 s at most, so a long song needs one timer trigger per block.</small>
 <label>Loop method</label>
 <select id="loopMethod"><option value="S">The start trigger restarts itself (a timer chain re-fires it)</option><option value="P">Through a hidden extra trigger</option></select>
-<div class="chk"><input id="direct" type="checkbox" checked><span>Sound triggers carry their own delay (about half the triggers)</span></div>
-<small>⚠ On by default. If the song plays wrong or the game lags, turn it off.</small>
+<div class="chk"><input id="share" type="checkbox" checked><span>Share identical sound triggers (far fewer triggers)</span></div>
+<small>One trigger per distinct sound + volume, fired by every moment that needs it (the technique of the Bad Apple level). With velocity as volume, velocities snap to 2 dB steps. When on, the option below is ignored.</small>
+<div class="chk"><input id="direct" type="checkbox"><span>Sound triggers carry their own delay (about half the triggers)</span></div>
+<small>⚠ If the song plays wrong or the game lags, turn it off.</small>
 <div class="row"><div><label>Trigger-only "triggered by"</label><input id="bt" type="number" value="5"></div><div><label>Player contact</label><input id="bp" type="number" value="1"></div></div>
 <div class="row"><div><label>Click</label><input id="bk" type="number" value="6"></div><div><label>Repeat type</label><input id="rt" type="number" value="2"></div></div>
 <div class="row"><div><label>"Activate" action</label><input id="tra" type="number" value="0"></div><div><label>Sound trigger type</label><input id="tsn" type="number" value="2"></div></div>
@@ -292,6 +294,12 @@ const HWMusic = (function () {
     return `<sh t="4" i="f" p0="${r1(cx)}" p1="${r1(cy)}" p2="${w}" p3="${h}" p4="0" p5="f" p6="f" p7="1" p8="${color}" p9="-1" p10="100" p11="1"><v f="t" id="${id}" n="${Q.length}" ${Q.map((q, i) => `v${i}="${r1(q[0] - cx)}_${r1(q[1] - cy)}"`).join(' ')}/></sh>`;
   }
   /* p: see page. events: output of makeEvents */
+  /* sound volume: velocity (or fixed) -> v. With shared triggers the velocity snaps to a 2 dB ladder (like the Bad Apple level), so identical sounds can be reused */
+  function volOf(e, p) {
+    let v = p.velVol ? Math.max(0.1, Math.min(1, e.vel / 127)) : (p.volume === undefined ? 1 : p.volume);
+    if (p.share && p.velVol) v = Math.pow(10, -Math.round(-20 * Math.log10(v) / 2) * 2 / 20);
+    return Math.round(v * 10000) / 10000;
+  }
   function build(events, p) {
     const TB = p.trigBase || 0, TA = p.trigAct === undefined ? 0 : p.trigAct;
     const bT = p.bTimer === undefined ? 5 : p.bTimer, bP = p.bPlayer === undefined ? 1 : p.bPlayer, bC = p.bClick === undefined ? 6 : p.bClick;
@@ -311,11 +319,15 @@ const HWMusic = (function () {
     const endT = lastT + Math.max(0.05, en.gap === undefined ? 0.5 : en.gap), fireE = Math.max(lastT + 0.01, endT - dP);
     const L = Math.min(30, p.seg > 0 ? p.seg : 30), segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
     let J = slots.length ? segOf(lastT) + 1 : 1; const jE = loop ? segOf(fireE) : -1; if (loop) J = Math.max(J, jE + 1);
-    const direct = !!p.direct;
+    const share = !!p.share, direct = !!p.direct && !share;
     let ix = B0; const iR = []; for (let j = 1; j < J; j++) iR[j] = ix++;
     const iE = loop ? ix++ : -1;
     const slotIdx = [], soundIdx = [];
-    slots.forEach((s, k) => { if (!direct) slotIdx[k] = ix++; soundIdx[k] = s.ev.map(() => ix++); });
+    const leaf = new Map(), leafList = [];
+    if (share) {   // one trigger per distinct (sound, volume), fired by every time slot that needs it
+      slots.forEach((s, k) => { slotIdx[k] = ix++; });
+      slots.forEach((s, k) => { soundIdx[k] = [...new Set(s.ev.map((e) => { const key = e.id + '|' + volOf(e, p); if (!leaf.has(key)) { leaf.set(key, ix++); leafList.push({ i: leaf.get(key), e }); } return leaf.get(key); }))]; });
+    } else slots.forEach((s, k) => { if (!direct) slotIdx[k] = ix++; soundIdx[k] = s.ev.map(() => ix++); });
     const total = ix, tri = new Array(total);
     const segTargets = Array.from({ length: J }, () => []);
     slots.forEach((s, k) => { const j = segOf(s.t); if (direct) soundIdx[k].forEach((q) => segTargets[j].push(q)); else segTargets[j].push(slotIdx[k]); });
@@ -355,12 +367,12 @@ const HWMusic = (function () {
     else mk(0, sx, sy, sw, sh, sb, 1, loop || st.type === 'trigger' ? 2 : sr, dP, body(0));   // the start trigger itself carries the first block and is re-fired by the loop trigger
     for (let j = 1; j < J; j++) { const [x, y] = cell(iR[j]); mk(iR[j], x, y, 12, 12, bT, 1, rT, L, body(j)); }
     if (loop) { const [x, y] = cell(iE); mk(iE, x, y, 12, 12, bT, 1, rT, Math.max(0, fireE - (L === Infinity ? 0 : jE * L)), [tact(0)].slice(0, 0).concat(useP ? [tact(1)] : [tact(0)])); }
-    const volOf = (e) => (p.velVol ? Math.max(0.1, Math.min(1, Math.round(e.vel / 127 * 100) / 100)) : (p.volume === undefined ? 1 : p.volume));
     slots.forEach((s, k) => {
       const j = segOf(s.t), rel = Math.max(0, s.t - (L === Infinity ? 0 : j * L));
       if (!direct) { const [x, y] = cell(slotIdx[k]); mk(slotIdx[k], x, y, 12, 12, bT, 1, rT, rel, soundIdx[k].map(tact)); }
-      s.ev.forEach((e, q) => { const [x, y] = cell(soundIdx[k][q]); mk(soundIdx[k][q], x, y, 12, 12, bT, 2, rT, direct ? rel : 0, null, { s: e.id + (p.sOff || 0), v: volOf(e) }); });
+      if (!share) s.ev.forEach((e, q) => { const [x, y] = cell(soundIdx[k][q]); mk(soundIdx[k][q], x, y, 12, 12, bT, 2, rT, direct ? rel : 0, null, { s: e.id + (p.sOff || 0), v: volOf(e, p) }); });
     });
+    leafList.forEach(({ i, e }) => { const [x, y] = cell(i); mk(i, x, y, 12, 12, bT, 2, rT, 0, null, { s: e.id + (p.sOff || 0), v: volOf(e, p) }); });
     for (let i = 0; i < total; i++) trig.push(tri[i]);
     const rows = Math.max(1, Math.ceil((total - B0) / cols));
     lay.push({ k: 'grid', x: gx0, y: gy0 + 90, w: Math.min(cols, Math.max(1, total - B0)) * pitch, h: rows * pitch, l: 'trigger machinery (' + total + ' triggers)' });
@@ -380,6 +392,7 @@ const HWMusic = (function () {
     const B0 = p.loopMethod === 'P' ? 2 : 1;
     const L = Math.min(30, p.seg > 0 ? p.seg : 30), segOf = (t) => (L === Infinity ? 0 : Math.floor(t / L + 1e-9));
     let J = nSlots ? segOf(lastT) + 1 : 1; if (loop) J = Math.max(J, segOf(fireE) + 1);
+    if (p.share) return B0 + (J - 1) + (loop ? 1 : 0) + nSlots + new Set(events.map((e) => e.id + '|' + volOf(e, p))).size;
     return B0 + (J - 1) + (loop ? 1 : 0) + (p.direct ? 0 : nSlots) + events.length;
   }
   /* keeps the longest prefix of the song whose trigger count (start/play/relays/loop included) fits max */
@@ -511,7 +524,7 @@ function renderMap(){
 function mapObj(){const ps=activeParts();return {mode:MS.mode,one:MS.one,bands:MS.bands.slice(0,MS.nb),edges:HWMusic.bandEdges(ps,MS.nb,MS.how),tracks:MS.tracks,drums:MS.drums,notes:MS.notes}}
 function params(){
   const full=chk('sFloor');
-  const p={cx:num('cx'),cy:num('cy'),labels:chk('labels'),vehicle:num('veh'),seg:num('seg'),loopMethod:$('loopMethod').value,direct:chk('direct'),velVol:chk('velVol'),
+  const p={cx:num('cx'),cy:num('cy'),labels:chk('labels'),vehicle:num('veh'),seg:num('seg'),loopMethod:$('loopMethod').value,direct:chk('direct'),share:chk('share'),velVol:chk('velVol'),
     bTimer:num('bt'),bPlayer:num('bp'),bClick:num('bk'),rTimer:num('rt'),trigAct:num('tra'),tSound:num('tsn'),volume:num('vol'),sOff:num('sOff'),
     scene:{floor:full,walls:chk('sWalls'),stripe:chk('sStripe'),text:chk('sTxt')?($('sTxtVal').value||({auto:'Music starts on its own',click:'Click the red button to play the music',trigger:'Music: start it with your own trigger'})[$('sType').value]):''},
     start:{type:$('sType').value},end:{type:$('eType').value,gap:num('gap')}};
@@ -580,7 +593,7 @@ function drawMap(){
 }
 
 /* ---------- wiring ---------- */
-['tStart','tEnd','speed','minVel','mapMode','velVol','sType','eType','gap','sFloor','sWalls','sStripe','sTxt','sTxtVal','labels','veh','cx','cy','res','poly','maxNotes','maxShapes','seg','loopMethod','direct','bt','bp','bk','rt','tra','tsn','vol','sOff'].forEach(i=>$(i).addEventListener('input',()=>{if(i==='mapMode')renderMap();deb()}));
+['tStart','tEnd','speed','minVel','mapMode','velVol','sType','eType','gap','sFloor','sWalls','sStripe','sTxt','sTxtVal','labels','veh','cx','cy','res','poly','maxNotes','maxShapes','seg','loopMethod','direct','share','bt','bp','bk','rt','tra','tsn','vol','sOff'].forEach(i=>$(i).addEventListener('input',()=>{if(i==='mapMode')renderMap();deb()}));
 $('mapMode').addEventListener('change',renderMap);
 $('set900').onclick=()=>{$('maxShapes').value=Math.max(1,900-(cur?cur.trigs:0));deb()};
 $('presetFull').onclick=()=>{['sFloor','sWalls','sStripe','sTxt'].forEach(i=>$(i).checked=true);deb()};
