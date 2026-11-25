@@ -1,0 +1,26 @@
+main {
+  --color-fg-default: #e50000;
+  --color-fg-muted: #b30000;
+  --color-fg-subtle: #800000;
+  --color-canvas-default: #0a0a0a;
+  --color-canvas-overlay: #0a0a0a;
+  --color-canvas-inset: #140000;
+  --color-canvas-subtle: #140000;
+  --color-border-default: #e50000;
+  --color-border-muted: #800000;
+  --color-neutral-muted: rgba(229, 0, 0, 0.15);
+  --color-accent-fg: #ff3333;
+  --color-accent-emphasis: #e50000;
+  --color-accent-muted: rgba(229, 0, 0, 0.4);
+  --color-accent-subtle: rgba(229, 0, 0, 0.1);
+  --color-btn-text: #e50000;
+  --color-btn-bg: #0a0a0a;
+  --color-btn-border: #e50000;
+  --color-btn-hover-bg: #e50000;
+  --color-btn-hover-border: #e50000;
+  --color-btn-primary-text: #0a0a0a;
+  --color-btn-primary-bg: #e50000;
+  --color-btn-primary-border: #e50000;
+  --color-btn-primary-hover-bg: #ff3333;
+  --color-btn-primary-hover-border: #ff3333;
+}
